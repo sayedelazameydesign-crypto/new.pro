@@ -133,6 +133,11 @@ export async function POST(req: NextRequest) {
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
       "X-Accel-Buffering": "no",
+      // ترويسات الحماية ظاهرة دائمًا (قياسية) — للرصد والتحقق
+      "X-RateLimit-Limit": String(rl.limit),
+      "X-RateLimit-Remaining": String(rl.remaining),
+      "X-RateLimit-Reset": String(rl.resetInSec),
+      "X-RateLimit-Source": rl.source,
     },
   });
 }
