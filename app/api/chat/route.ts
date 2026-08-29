@@ -3,6 +3,7 @@
 
 import { NextRequest } from "next/server";
 import { streamReply, resolveProvider } from "@/lib/ai";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // أقصى مدة على Vercel Hobby المجاني
@@ -18,6 +19,28 @@ const MAX_INPUT_PAYLOAD = 60_000; // ~60KB بأمان
 const MAX_MESSAGES = 20; // عدد الرسائل الأقصى المستلم
 
 export async function POST(req: NextRequest) {
+  // ── طبقة 1: حماية الحدود (Rate Limit) — تُفحص قبل أي معالجة ──
+  const ip = getClientIp(req);
+  const rl = await checkRateLimit("chat", ip);
+  if (!rl.ok) {
+    return Response.json(
+      {
+        error: "تجاوزت الحد المسموح من الرسائل في الدقيقة. انتظر قليلاً ثم أعد المحاولة.",
+        code: "RATE_LIMITED",
+        resetInSec: rl.resetInSec,
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.max(1, rl.resetInSec)),
+          "X-RateLimit-Limit": String(rl.limit),
+          "X-RateLimit-Remaining": String(rl.remaining),
+          "X-RateLimit-Source": rl.source,
+        },
+      }
+    );
+  }
+
   let body: ChatBody = {};
   try {
     const raw = await req.text();

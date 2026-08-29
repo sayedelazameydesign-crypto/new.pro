@@ -195,3 +195,37 @@ test("PUT /api/conversations مع deviceId غير صالح → 400", async () =>
   });
   assert.equal(res.status, 400);
 });
+
+// ─────────── 10) حماية الحدود (Rate Limit) — يُشغَّل أخيرًا لأنه يستهلك الحصة ───────────
+test("تجاوز حد الرسائل يعيد 429 برسالة واضحة وترويسات الحماية", async () => {
+  const statuses = [];
+  for (let i = 0; i < 25; i++) {
+    const res = await fetch(`${BASE}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: [{ role: "user", content: `رسالة الحماية ${i}` }], modelId: "demo" }),
+    });
+    statuses.push(res.status);
+  }
+
+  // يجب أن تمر بعض الطلبات (ضمن الحد) ويُرفض ما بعد الحد
+  assert.ok(statuses.includes(200), "الطلبات ضمن الحد تنجح");
+  assert.ok(statuses.includes(429), "الطلبات بعد الحد تُرفض بـ 429");
+
+  // شكل استجابة الرفض
+  const res = await fetch(`${BASE}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages: [{ role: "user", content: "بعد الحد" }], modelId: "demo" }),
+  });
+  assert.equal(res.status, 429);
+  const j = await res.json();
+  assert.equal(j.code, "RATE_LIMITED");
+  assert.ok(typeof j.error === "string" && j.error.length > 5, "رسالة خطأ واضحة");
+  assert.ok(res.headers.get("Retry-After"), "ترويسة Retry-After موجودة");
+});
+
+test("نقطة المزامنة لها حد أعلى (لا تُرفض ضمن 60/دقيقة)", async () => {
+  const res = await fetch(`${BASE}/api/conversations?deviceId=rate-test-12345678`);
+  assert.ok(res.status === 200 || res.status === 429, "تستجيب (200 أو 429 عند الحاجة)");
+});

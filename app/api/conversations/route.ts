@@ -6,6 +6,7 @@
 
 import { NextRequest } from "next/server";
 import { pullDevice, pushDevice, deleteDevice } from "@/lib/storage-neon";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import type { Conversation, Settings } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,23 @@ const MAX_MSG_CHARS = 50_000;
 const DEVICE_RE = /^[a-zA-Z0-9-]{8,80}$/;
 
 const syncEnabled = () => !!process.env.DATABASE_URL;
+
+/** حماية الحدود لنقطة المزامنة — تُرجع استجابة رفض أو null */
+async function enforceSyncLimit(req: NextRequest): Promise<Response | null> {
+  const ip = getClientIp(req);
+  const lim = Number(process.env.RATE_LIMIT_SYNC_PER_MIN) || 60;
+  const rl = await checkRateLimit("sync", ip, lim);
+  if (!rl.ok) {
+    return Response.json(
+      { error: "تجاوزت الحد المسموح من طلبات المزامنة. انتظر قليلاً.", code: "RATE_LIMITED" },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.max(1, rl.resetInSec)) },
+      }
+    );
+  }
+  return null;
+}
 
 /** تعقيم المحادثات القادمة من العميل — نبني كائنات نظيفة فقط */
 function sanitizeConversations(raw: unknown): Conversation[] | null {
@@ -75,6 +93,9 @@ function sanitizeSettings(raw: unknown): Partial<Settings> | null {
 }
 
 export async function GET(req: NextRequest) {
+  const blocked = await enforceSyncLimit(req);
+  if (blocked) return blocked;
+
   const deviceId = req.nextUrl.searchParams.get("deviceId") ?? "";
   if (!DEVICE_RE.test(deviceId)) {
     return Response.json({ error: "deviceId غير صالح" }, { status: 400 });
@@ -97,6 +118,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const blocked = await enforceSyncLimit(req);
+  if (blocked) return blocked;
+
   let raw: string;
   try {
     raw = await req.text();
@@ -139,6 +163,9 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const blocked = await enforceSyncLimit(req);
+  if (blocked) return blocked;
+
   const deviceId = req.nextUrl.searchParams.get("deviceId") ?? "";
   if (!DEVICE_RE.test(deviceId)) {
     return Response.json({ error: "deviceId غير صالح" }, { status: 400 });
