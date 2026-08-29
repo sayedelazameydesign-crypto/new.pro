@@ -1,7 +1,7 @@
 // ===== سجل الموديلات (مشترك بين الواجهة والخلفية) =====
 // إضافة موديل جديد = سطر واحد هنا فقط — بدون لمس أي كود آخر.
 
-export type ProviderKind = "gemini" | "huggingface" | "demo";
+export type ProviderKind = "gemini" | "huggingface" | "groq" | "demo";
 
 export interface ModelDef {
   id: string; // "provider:model-name"
@@ -12,6 +12,22 @@ export interface ModelDef {
 }
 
 export const MODELS: ModelDef[] = [
+  // — Groq (مفتاح مجاني من console.groq.com — الأسرع في الرد) —
+  {
+    id: "groq:llama-3.3-70b-versatile",
+    name: "Llama 3.3 70B (Groq)",
+    provider: "groq",
+    description: "الأقوى على البنية المجانية — ردود فورية",
+    free: true,
+  },
+  {
+    id: "groq:llama-3.1-8b-instant",
+    name: "Llama 3.1 8B (Groq)",
+    provider: "groq",
+    description: "خفيف وسريع جدًا — حصة يومية أعلى",
+    free: true,
+  },
+
   // — Google Gemini (مفتاح مجاني من AI Studio) —
   {
     id: "gemini:gemini-2.5-flash",

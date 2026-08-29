@@ -116,6 +116,15 @@ test("طلب Hugging Face بلا توكن يتراجع تلقائيًا", async 
   assert.equal(events.find((e) => e.provider)?.provider, "demo");
 });
 
+test("طلب Groq بلا مفتاح يتراجع تلقائيًا", async () => {
+  const { res, events } = await postChat({
+    messages: [{ role: "user", content: "اختبار تراجع Groq" }],
+    modelId: "groq:llama-3.3-70b-versatile",
+  });
+  assert.equal(res.status, 200);
+  assert.equal(events.find((e) => e.provider)?.provider, "demo");
+});
+
 // ─────────── 6) التحقق من صحة المدخلات ───────────
 test("رسائل فارغة → 400", async () => {
   const res = await fetch(`${BASE}/api/chat`, {
