@@ -70,7 +70,7 @@ test("GET /api/models يعرض كل المزودات", async () => {
   assert.ok(ids.includes("gemini:gemini-2.5-pro"), "يحتوي Gemini Pro");
   assert.ok(ids.includes("groq:openai/gpt-oss-120b"), "يحتوي GPT-OSS 120B على Groq");
   assert.ok(ids.includes("groq:openai/gpt-oss-20b"), "يحتوي GPT-OSS 20B على Groq");
-  assert.ok(ids.includes("hf:mistralai/Mistral-7B-Instruct-v0.3"), "يحتوي Mistral");
+  assert.ok(ids.includes("hf:Qwen/Qwen2.5-7B-Instruct"), "يحتوي Qwen عبر HF");
   assert.ok(ids.includes("demo"), "يحتوي وضع العرض");
   assert.ok(j.models.length >= 7, "عدد الموديلات كافٍ");
 });

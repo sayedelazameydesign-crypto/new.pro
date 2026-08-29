@@ -51,26 +51,19 @@ export const MODELS: ModelDef[] = [
     free: true,
   },
 
-  // — Hugging Face (توكن مجاني) —
-  {
-    id: "hf:mistralai/Mistral-7B-Instruct-v0.3",
-    name: "Mistral 7B Instruct",
-    provider: "huggingface",
-    description: "خفيف وسريع عبر خوادم HF المجانية",
-    free: true,
-  },
-  {
-    id: "hf:meta-llama/Llama-3.2-3B-Instruct",
-    name: "Llama 3.2 3B",
-    provider: "huggingface",
-    description: "ممتاز للمهام السريعة اليومية",
-    free: true,
-  },
+  // — Hugging Face (توكن مجاني — يتطلب تفعيل Inference Providers في الحساب) —
   {
     id: "hf:Qwen/Qwen2.5-7B-Instruct",
     name: "Qwen 2.5 7B",
     provider: "huggingface",
-    description: "قوي جدًا في الكود واللغات",
+    description: "قوي في الكود واللغات (انظر ملاحظة HF بالأسفل)",
+    free: true,
+  },
+  {
+    id: "hf:microsoft/Phi-3.5-mini-instruct",
+    name: "Phi-3.5 Mini",
+    provider: "huggingface",
+    description: "خفيف وممتاز للمهام اليومية",
     free: true,
   },
 

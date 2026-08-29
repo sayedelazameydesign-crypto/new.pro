@@ -4,7 +4,8 @@
 
 **منصة محادثة ذكية كاملة** تعمل بالمجان حتى النشر — بدون بطاقة، بدون تكلفة.
 
-🔗 **الموقع الحي:** [https://nawah-ai-alpha.vercel.app](https://nawah-ai-alpha.vercel.app) · 📦 **الكود:** [GitHub](https://github.com/sayedelazameydesign-crypto/new.pro)
+🔗 **الموقع الحي (كامل):** [https://new-pro-kohl.vercel.app](https://new-pro-kohl.vercel.app) · 🔗 **نسخة الإعدادات الكاملة:** [nawah-ai-alpha.vercel.app](https://nawah-ai-alpha.vercel.app)
+📦 **الكود:** [GitHub](https://github.com/sayedelazameydesign-crypto/new.pro)
 
 `Next.js 15 (App Router)` · `Gemini API` · `Hugging Face` · `Vercel` · `TypeScript` · `Tailwind v4`
 
@@ -51,6 +52,9 @@ npm run dev
 
 > بدون أي مفتاح: التطبيق يعمل بوضع العرض التجريبي (يحاكي الرد تمامًا) حتى لا تتعطل التجربة أبدًا.
 
+
+
+> ⚠️ **عن مزود Hugging Face:** مفتاح التوكن يكفي للاتصال، لكن يجب تفعيل **Inference Providers** من إعدادات حساب HF (مجاني) حتى تُخدم الموديلات عبر router.huggingface.co. إن لم تُفعّل، ستظهر رسالة واضحة ويستمر النظام بالتراجع لمزود آخر. الموصى به أساسًا: **Gemini + Groq** (كلاهما يعمل فور إضافة المفتاح).
 
 ## 🔄 المزامنة السحابية (مجاني — Neon Postgres)
 

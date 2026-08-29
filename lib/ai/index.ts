@@ -14,7 +14,7 @@ export const hasGroq = () => !!process.env.GROQ_API_KEY;
 const FALLBACKS = {
   groq: { model: "openai/gpt-oss-120b", env: "GROQ_API_KEY" },
   gemini: { model: "gemini-2.5-flash", env: "GEMINI_API_KEY" },
-  huggingface: { model: "mistralai/Mistral-7B-Instruct-v0.3", env: "HF_TOKEN" },
+  huggingface: { model: "Qwen/Qwen2.5-7B-Instruct", env: "HF_TOKEN" },
 } as const;
 
 /** قرار المزود مع تراجع تلقائي ذكي (Fallback) — لا يفشل الطلب أبدًا إن وُجد أي مفتاح */

@@ -8,7 +8,7 @@
 const PROVIDERS = [
   { name: "Groq", env: "GROQ_API_KEY", modelId: "groq:openai/gpt-oss-120b" },
   { name: "Gemini", env: "GEMINI_API_KEY", modelId: "gemini:gemini-2.5-flash" },
-  { name: "Hugging Face", env: "HF_TOKEN", modelId: "hf:mistralai/Mistral-7B-Instruct-v0.3" },
+  { name: "Hugging Face", env: "HF_TOKEN", modelId: "hf:Qwen/Qwen2.5-7B-Instruct" },
 ];
 
 const BASE = process.env.BASE_URL || "http://localhost:3000";
