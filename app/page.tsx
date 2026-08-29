@@ -8,6 +8,8 @@ import {
   Copy,
   Menu,
   Cloud,
+  LogIn,
+  LogOut,
   RefreshCw,
   Send,
   Settings as SettingsIcon,
@@ -21,6 +23,7 @@ import Sidebar from "./components/Sidebar";
 import Welcome from "./components/Welcome";
 import ModelPicker from "./components/ModelPicker";
 import SettingsModal from "./components/SettingsModal";
+import AuthModal from "./components/AuthModal";
 import { getModel } from "@/lib/models";
 import { makeT } from "@/lib/i18n";
 import { DEFAULTS_SETTINGS, LocalStore, newConversation, titleFromMessages } from "@/lib/storage";
@@ -42,6 +45,11 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [providerUsed, setProviderUsed] = useState<string | null>(null); // المزود الفعلي كما قرره الخادم
   const [syncState, setSyncState] = useState<"off" | "syncing" | "synced">("off");
+  const [authInfo, setAuthInfo] = useState<{ enabled: boolean; user: { id: string; email: string; name?: string } | null }>({
+    enabled: false,
+    user: null,
+  });
+  const [showAuth, setShowAuth] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -51,35 +59,41 @@ export default function Home() {
   const active = conversations.find((c) => c.id === activeId) ?? null;
   const currentModel = getModel(settings.modelId);
 
-  // ===== التحميل الأولي + المزامنة السحابية =====
+  // ===== التحميل الأولي + المزامنة السحابية (قابل لإعادة الاستدعاء بعد الدخول/الخروج) =====
   const syncEnabledRef = useRef(false);
 
+  const loadAll = useCallback(async () => {
+    const [convs, st] = await Promise.all([store.load(), store.loadSettings()]);
+    let nextConvs = convs;
+    let nextSettings = { ...DEFAULTS_SETTINGS, ...st };
+
+    // سحب من السحابة (إن كانت مفعّلة) ودمج ذكي مع المحلي
+    const remote = await pullRemote();
+    if (remote.enabled) {
+      syncEnabledRef.current = true;
+      setSyncState("syncing");
+      nextConvs = mergeConversations(convs, remote.conversations ?? []);
+      if (remote.settings) nextSettings = { ...nextSettings, ...remote.settings };
+      // دفع النتيجة المدمجة لتعود السحابة متطابقة
+      await pushRemote(nextConvs, nextSettings);
+      setSyncState("synced");
+    }
+
+    setConversations(nextConvs);
+    setSettings(nextSettings);
+  }, []);
+
   useEffect(() => {
-    (async () => {
-      const [convs, st] = await Promise.all([store.load(), store.loadSettings()]);
-      let nextConvs = convs;
-      let nextSettings = { ...DEFAULTS_SETTINGS, ...st };
-
-      // سحب من السحابة (إن كانت مفعّلة) ودمج ذكي مع المحلي
-      const remote = await pullRemote();
-      if (remote.enabled) {
-        syncEnabledRef.current = true;
-        setSyncState("syncing");
-        nextConvs = mergeConversations(convs, remote.conversations ?? []);
-        if (remote.settings) nextSettings = { ...nextSettings, ...remote.settings };
-        // دفع النتيجة المدمجة لتعود السحابة متطابقة
-        await pushRemote(nextConvs, nextSettings);
-        setSyncState("synced");
-      }
-
-      setConversations(nextConvs);
-      setSettings(nextSettings);
-    })();
+    loadAll();
     fetch("/api/status")
       .then((r) => r.json())
       .then(setStatus)
       .catch(() => setStatus({ gemini: false, huggingface: false, groq: false }));
-  }, []);
+    fetch("/api/auth/status")
+      .then((r) => r.json())
+      .then(setAuthInfo)
+      .catch(() => setAuthInfo({ enabled: false, user: null }));
+  }, [loadAll]);
 
   // ===== الحفظ التلقائي المحلي + دفع للسحابة (مؤجل) =====
   useEffect(() => {
@@ -384,6 +398,38 @@ export default function Home() {
                 {t("typing")}
               </span>
             )}
+            {/* زر الحساب: دخول أو ملف المستخدم */}
+            {authInfo.enabled &&
+              (authInfo.user ? (
+                <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-[var(--bg)] border border-[var(--border)]">
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-[11px] font-black">
+                    {(authInfo.user.name || authInfo.user.email)[0]?.toUpperCase()}
+                  </div>
+                  <span className="text-[11px] font-bold max-w-[110px] truncate" dir="ltr">
+                    {authInfo.user.name || authInfo.user.email}
+                  </span>
+                  <button
+                    onClick={async () => {
+                      const { signOut } = await import("next-auth/react");
+                      await signOut({ redirect: false });
+                      setAuthInfo((a) => ({ ...a, user: null }));
+                      await loadAll();
+                    }}
+                    className="text-[var(--muted)] hover:text-red-400"
+                    title={t("logout")}
+                  >
+                    <LogOut size={14} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAuth(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-[12px] font-bold hover:opacity-90 transition-opacity"
+                >
+                  <LogIn size={14} />
+                  {t("authLogin")}
+                </button>
+              ))}
             <button
               onClick={() => setShowSettings(true)}
               className="p-2 rounded-xl hover:bg-[var(--bg)]"
@@ -403,7 +449,11 @@ export default function Home() {
               }`}
             >
               <Cloud size={12} className={syncState === "syncing" ? "animate-pulse" : ""} />
-              {syncState === "synced" ? t("synced") : t("syncing")}
+              {syncState === "synced"
+                ? authInfo.user
+                  ? t("syncedAccount")
+                  : t("syncedDevice")
+                : t("syncing")}
             </span>
           )}
         </div>
@@ -573,6 +623,21 @@ export default function Home() {
           onClose={() => setShowSettings(false)}
           onExport={exportData}
           onImport={importData}
+        />
+      )}
+
+      {/* نافذة الحساب */}
+      {showAuth && (
+        <AuthModal
+          enabled={authInfo.enabled}
+          t={t}
+          onClose={() => setShowAuth(false)}
+          onSuccess={async () => {
+            setShowAuth(false);
+            const r = await fetch("/api/auth/status").then((x) => x.json()).catch(() => null);
+            if (r) setAuthInfo(r);
+            await loadAll();
+          }}
         />
       )}
     </div>

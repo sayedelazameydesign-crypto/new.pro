@@ -229,3 +229,39 @@ test("نقطة المزامنة لها حد أعلى (لا تُرفض ضمن 60/
   const res = await fetch(`${BASE}/api/conversations?deviceId=rate-test-12345678`);
   assert.ok(res.status === 200 || res.status === 429, "تستجيب (200 أو 429 عند الحاجة)");
 });
+
+// ─────────── 11) الحسابات (Auth) — تدهور آمن بدون إعداد + تحقق من الصحة ───────────
+test("GET /api/auth/status بدون إعداد الحسابات → enabled:false (لا ينكسر)", async () => {
+  const res = await fetch(`${BASE}/api/auth/status`);
+  assert.equal(res.status, 200);
+  const j = await res.json();
+  assert.equal(j.enabled, false);
+  assert.equal(j.user, null);
+});
+
+test("POST /api/auth/register بصيغة صالحة → 503 (غير مفعّل بعد)", async () => {
+  const res = await fetch(`${BASE}/api/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "test@example.com", password: "password123", name: "مختبر" }),
+  });
+  assert.equal(res.status, 503);
+});
+
+test("POST /api/auth/register بريد غير صالح → 400", async () => {
+  const res = await fetch(`${BASE}/api/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "ليس-بريد", password: "password123" }),
+  });
+  assert.equal(res.status, 400);
+});
+
+test("POST /api/auth/register كلمة مرور قصيرة → 400", async () => {
+  const res = await fetch(`${BASE}/api/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "test@example.com", password: "short" }),
+  });
+  assert.equal(res.status, 400);
+});

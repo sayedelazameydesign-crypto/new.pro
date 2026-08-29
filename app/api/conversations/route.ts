@@ -7,6 +7,7 @@
 import { NextRequest } from "next/server";
 import { pullDevice, pushDevice, deleteDevice } from "@/lib/storage-neon";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { auth } from "@/lib/auth";
 import type { Conversation, Settings } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,27 @@ const MAX_MSG_CHARS = 50_000;
 const DEVICE_RE = /^[a-zA-Z0-9-]{8,80}$/;
 
 const syncEnabled = () => !!process.env.DATABASE_URL;
+
+/** تحديد نطاق المزامنة: الحساب (userId) إن وُجد، وإلا الجهاز (deviceId) */
+async function resolveScope(req: NextRequest, bodyDeviceId?: string): Promise<
+  { scope: string; account: boolean } | { error: Response }
+> {
+  // محاولة جلسة المستخدم (cookie) — يُعطي أولوية دائمًا
+  try {
+    const session = await auth();
+    if (session?.user?.id) {
+      return { scope: `user:${session.user.id}`, account: true };
+    }
+  } catch {
+    /* تجاهل — نكمل بمفتاح الجهاز */
+  }
+
+  const deviceId = bodyDeviceId || req.nextUrl.searchParams.get("deviceId") || "";
+  if (!DEVICE_RE.test(deviceId)) {
+    return { error: Response.json({ error: "deviceId غير صالح" }, { status: 400 }) };
+  }
+  return { scope: `device:${deviceId}`, account: false };
+}
 
 /** حماية الحدود لنقطة المزامنة — تُرجع استجابة رفض أو null */
 async function enforceSyncLimit(req: NextRequest): Promise<Response | null> {
@@ -96,19 +118,18 @@ export async function GET(req: NextRequest) {
   const blocked = await enforceSyncLimit(req);
   if (blocked) return blocked;
 
-  const deviceId = req.nextUrl.searchParams.get("deviceId") ?? "";
-  if (!DEVICE_RE.test(deviceId)) {
-    return Response.json({ error: "deviceId غير صالح" }, { status: 400 });
-  }
+  const scopeRes = await resolveScope(req);
+  if ("error" in scopeRes) return scopeRes.error;
+  const { scope, account } = scopeRes;
 
   if (!syncEnabled()) return Response.json({ enabled: false });
 
   try {
-    const payload = await pullDevice(deviceId);
-    if (!payload) return Response.json({ enabled: true, conversations: [], settings: null });
+    const payload = await pullDevice(scope);
+    if (!payload) return Response.json({ enabled: true, account, conversations: [], settings: null });
     const conversations = sanitizeConversations(payload.conversations) ?? [];
     const settings = sanitizeSettings(payload.settings);
-    return Response.json({ enabled: true, conversations, settings });
+    return Response.json({ enabled: true, account, conversations, settings });
   } catch (err) {
     return Response.json(
       { error: "تعذر الاتصال بقاعدة البيانات", detail: err instanceof Error ? err.message : "" },
@@ -138,11 +159,13 @@ export async function PUT(req: NextRequest) {
     return Response.json({ error: "JSON غير صالح" }, { status: 400 });
   }
 
+  const rawDeviceId = typeof body.deviceId === "string" ? body.deviceId : "";
+
   // التحقق من الصحة أولًا — بغض النظر عن حالة قاعدة البيانات
-  const deviceId = typeof body.deviceId === "string" ? body.deviceId : "";
-  if (!DEVICE_RE.test(deviceId)) {
-    return Response.json({ error: "deviceId غير صالح" }, { status: 400 });
-  }
+  const scopeRes = await resolveScope(req, rawDeviceId);
+  if ("error" in scopeRes) return scopeRes.error;
+  const { scope, account } = scopeRes;
+
   const conversations = sanitizeConversations(body.conversations);
   if (!conversations) {
     return Response.json({ error: "conversations غير صالحة" }, { status: 400 });
@@ -152,8 +175,8 @@ export async function PUT(req: NextRequest) {
   if (!syncEnabled()) return Response.json({ enabled: false });
 
   try {
-    await pushDevice(deviceId, { v: 1, conversations, settings: settings ?? {} });
-    return Response.json({ enabled: true, ok: true });
+    await pushDevice(scope, { v: 1, conversations, settings: settings ?? {} });
+    return Response.json({ enabled: true, account, ok: true });
   } catch (err) {
     return Response.json(
       { error: "تعذر الحفظ في قاعدة البيانات", detail: err instanceof Error ? err.message : "" },
@@ -166,15 +189,14 @@ export async function DELETE(req: NextRequest) {
   const blocked = await enforceSyncLimit(req);
   if (blocked) return blocked;
 
-  const deviceId = req.nextUrl.searchParams.get("deviceId") ?? "";
-  if (!DEVICE_RE.test(deviceId)) {
-    return Response.json({ error: "deviceId غير صالح" }, { status: 400 });
-  }
+  const scopeRes = await resolveScope(req);
+  if ("error" in scopeRes) return scopeRes.error;
+  const { scope } = scopeRes;
 
   if (!syncEnabled()) return Response.json({ enabled: false });
 
   try {
-    await deleteDevice(deviceId);
+    await deleteDevice(scope);
     return Response.json({ enabled: true, ok: true });
   } catch {
     return Response.json({ error: "تعذر الحذف" }, { status: 500 });
