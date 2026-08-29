@@ -12,7 +12,7 @@ export const hasHuggingFace = () => !!process.env.HF_TOKEN;
 export const hasGroq = () => !!process.env.GROQ_API_KEY;
 
 const FALLBACKS = {
-  groq: { model: "llama-3.3-70b-versatile", env: "GROQ_API_KEY" },
+  groq: { model: "openai/gpt-oss-120b", env: "GROQ_API_KEY" },
   gemini: { model: "gemini-2.5-flash", env: "GEMINI_API_KEY" },
   huggingface: { model: "mistralai/Mistral-7B-Instruct-v0.3", env: "HF_TOKEN" },
 } as const;
@@ -24,6 +24,9 @@ export function resolveProvider(modelId: string): {
   apiKey: string;
 } {
   const { provider, model } = splitModelIdSafe(modelId);
+
+  // وضع العرض: لا يتراجع أبدًا — يُستخدم عمدًا من المستخدم
+  if (provider === "demo") return { provider: "demo", model: "demo", apiKey: "" };
 
   // 1) المزود المطلوب نفسه إن وُجد مفتاحه
   const direct = pick(model, provider);
@@ -39,7 +42,10 @@ export function resolveProvider(modelId: string): {
   return { provider: "demo", model: "demo", apiKey: "" };
 }
 
-function pick(model: string, p: ProviderKind): { provider: ProviderKind; model: string; apiKey: string } | null {
+function pick(
+  model: string,
+  p: ProviderKind
+): { provider: ProviderKind; model: string; apiKey: string } | null {
   const key = FALLBACKS[p as keyof typeof FALLBACKS]?.env;
   if (!key) return null;
   const apiKey = process.env[key];
@@ -92,9 +98,11 @@ export async function* streamReply(opts: {
 function splitModelIdSafe(id: string): { provider: ProviderKind; model: string } {
   const idx = id.indexOf(":");
   if (idx === -1) return { provider: "demo", model: id };
-  const provider = id.slice(0, idx);
+  let provider = id.slice(0, idx);
+  // مرادفات النطاقات: "hf" يُطابق مزود Hugging Face
+  if (provider === "hf") provider = "huggingface";
   if (provider !== "gemini" && provider !== "huggingface" && provider !== "groq" && provider !== "demo") {
     return { provider: "demo", model: id };
   }
-  return { provider, model: id.slice(idx + 1) };
+  return { provider: provider as ProviderKind, model: id.slice(idx + 1) };
 }

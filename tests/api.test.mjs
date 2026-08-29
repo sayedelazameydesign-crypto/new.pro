@@ -68,6 +68,8 @@ test("GET /api/models يعرض كل المزودات", async () => {
   const ids = j.models.map((m) => m.id);
   assert.ok(ids.includes("gemini:gemini-2.5-flash"), "يحتوي Gemini Flash");
   assert.ok(ids.includes("gemini:gemini-2.5-pro"), "يحتوي Gemini Pro");
+  assert.ok(ids.includes("groq:openai/gpt-oss-120b"), "يحتوي GPT-OSS 120B على Groq");
+  assert.ok(ids.includes("groq:openai/gpt-oss-20b"), "يحتوي GPT-OSS 20B على Groq");
   assert.ok(ids.includes("hf:mistralai/Mistral-7B-Instruct-v0.3"), "يحتوي Mistral");
   assert.ok(ids.includes("demo"), "يحتوي وضع العرض");
   assert.ok(j.models.length >= 7, "عدد الموديلات كافٍ");
