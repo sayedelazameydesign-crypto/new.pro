@@ -7,6 +7,7 @@ import {
   Bot,
   Copy,
   Menu,
+  Cloud,
   RefreshCw,
   Send,
   Settings as SettingsIcon,
@@ -23,6 +24,7 @@ import SettingsModal from "./components/SettingsModal";
 import { getModel } from "@/lib/models";
 import { makeT } from "@/lib/i18n";
 import { DEFAULTS_SETTINGS, LocalStore, newConversation, titleFromMessages } from "@/lib/storage";
+import { pullRemote, pushRemote, mergeConversations } from "@/lib/sync";
 import { copyText, uid } from "@/lib/utils";
 import type { ChatMessage, Conversation, ProviderStatus, Settings } from "@/lib/types";
 
@@ -39,6 +41,7 @@ export default function Home() {
   const [showSidebarMobile, setShowSidebarMobile] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [providerUsed, setProviderUsed] = useState<string | null>(null); // المزود الفعلي كما قرره الخادم
+  const [syncState, setSyncState] = useState<"off" | "syncing" | "synced">("off");
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -48,12 +51,29 @@ export default function Home() {
   const active = conversations.find((c) => c.id === activeId) ?? null;
   const currentModel = getModel(settings.modelId);
 
-  // ===== التحميل الأولي =====
+  // ===== التحميل الأولي + المزامنة السحابية =====
+  const syncEnabledRef = useRef(false);
+
   useEffect(() => {
     (async () => {
       const [convs, st] = await Promise.all([store.load(), store.loadSettings()]);
-      setConversations(convs);
-      if (Object.keys(st).length) setSettings({ ...DEFAULTS_SETTINGS, ...st });
+      let nextConvs = convs;
+      let nextSettings = { ...DEFAULTS_SETTINGS, ...st };
+
+      // سحب من السحابة (إن كانت مفعّلة) ودمج ذكي مع المحلي
+      const remote = await pullRemote();
+      if (remote.enabled) {
+        syncEnabledRef.current = true;
+        setSyncState("syncing");
+        nextConvs = mergeConversations(convs, remote.conversations ?? []);
+        if (remote.settings) nextSettings = { ...nextSettings, ...remote.settings };
+        // دفع النتيجة المدمجة لتعود السحابة متطابقة
+        await pushRemote(nextConvs, nextSettings);
+        setSyncState("synced");
+      }
+
+      setConversations(nextConvs);
+      setSettings(nextSettings);
     })();
     fetch("/api/status")
       .then((r) => r.json())
@@ -61,11 +81,19 @@ export default function Home() {
       .catch(() => setStatus({ gemini: false, huggingface: false, groq: false }));
   }, []);
 
-  // ===== الحفظ التلقائي + تطبيق المظهر =====
+  // ===== الحفظ التلقائي المحلي + دفع للسحابة (مؤجل) =====
   useEffect(() => {
-    const id = setTimeout(() => store.saveAll(conversations), 300);
+    const id = setTimeout(() => {
+      store.saveAll(conversations);
+      if (syncEnabledRef.current) {
+        setSyncState("syncing");
+        pushRemote(conversations, settings)
+          .then((ok) => setSyncState(ok ? "synced" : "off"))
+          .catch(() => setSyncState("off"));
+      }
+    }, 1200);
     return () => clearTimeout(id);
-  }, [conversations]);
+  }, [conversations, settings]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", settings.theme);
@@ -365,6 +393,20 @@ export default function Home() {
             </button>
           </div>
         </header>
+
+        {/* مؤشر المزامنة السحابية */}
+        <div className="px-4 pt-1 flex justify-end">
+          {syncState !== "off" && (
+            <span
+              className={`inline-flex items-center gap-1 text-[10px] font-bold ${
+                syncState === "synced" ? "text-emerald-400" : "text-amber-400"
+              }`}
+            >
+              <Cloud size={12} className={syncState === "syncing" ? "animate-pulse" : ""} />
+              {syncState === "synced" ? t("synced") : t("syncing")}
+            </span>
+          )}
+        </div>
 
         {/* تنبيه وضع العرض التجريبي — يرشد المستخدم لإضافة مفتاح */}
         {providerUsed === "demo" && (

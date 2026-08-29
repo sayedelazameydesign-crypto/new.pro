@@ -79,6 +79,9 @@ const dict: Record<Lang, Record<string, string>> = {
     menu: "القائمة",
     editHint: "تعديل العنوان",
     selected: "محدد",
+    synced: "متزامن",
+    syncing: "جارٍ المزامنة…",
+    syncOff: "المزامنة السحابية غير مفعّلة",
   },
 
   en: {
@@ -157,6 +160,9 @@ const dict: Record<Lang, Record<string, string>> = {
     menu: "Menu",
     editHint: "Edit title",
     selected: "Selected",
+    synced: "Synced",
+    syncing: "Syncing…",
+    syncOff: "Cloud sync is off",
   },
 };
 

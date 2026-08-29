@@ -41,6 +41,20 @@ Request Flow
 ### سجل الموديلات — `lib/models.ts`
 `MODELS[]` هو **المصدر الوحيد للحقيقة** في القائمة. الواجهة والخلفية والـ API كلهم يقرؤون منه.
 
+
+### 2.5) طبقة المزامنة (Neon) — المرحلة 2
+```
+العميل (lib/sync.ts)                الخادم (app/api/conversations)        قاعدة البيانات
+  getDeviceId() ──┐                                                        (lib/storage-neon.ts)
+  pullRemote() ───┼── GET  ?deviceId → [تحقق → سحب] ── pullDevice() ──> nahwa_sync
+  pushRemote() ───┼── PUT  {deviceId, ...} → [تعقيم → دفع] ── pushDevice() ──> upsert
+  clearRemote() ──┴── DELETE ?deviceId ── deleteDevice()
+```
+- **مبدأ التطابق التصاعدي:** بدون جلسة ، يُعامل كل جهاز كلا من نفسه — key= `device_id` (UUID في localStorage).
+- **الدمج:** لكل محادثة يفوز الأحدث `updatedAt`؛ اتحاد معرفات بين المحلي والسحابي.
+- **الأمان:** تعقيم كامل (أدوار/أطوال/حجم ≤3MB/عدد محادثات ≤300) + النتائج تُرفض إن لم تطابق.
+- **التوسعة لاحقًا:** استبدال مفتاح الجهاز بـ `userId` (Auth.js) أو جدول أعضاء — نفس الواجهة.
+
 ### التخزين — `lib/storage.ts`
 واجهة واحدة فقط:
 ```ts

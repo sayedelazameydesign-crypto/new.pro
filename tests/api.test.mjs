@@ -165,3 +165,31 @@ test("إرسال temperature خارج النطاق يُضبط بأمان (لا �
   assert.equal(res.status, 200);
   assert.ok(textOf(events).length > 50);
 });
+
+// ─────────── 9) المزامنة السحابية (بدون DATABASE_URL → وضع محلي، لا ينكسر) ───────────
+test("GET /api/conversations بدون قاعدة بيانات → enabled:false", async () => {
+  const res = await fetch(`${BASE}/api/conversations?deviceId=test-device-1234`);
+  assert.equal(res.status, 200);
+  const j = await res.json();
+  assert.equal(j.enabled, false);
+});
+
+test("PUT /api/conversations بدون قاعدة بيانات → enabled:false (تجاهل آمن)", async () => {
+  const res = await fetch(`${BASE}/api/conversations`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ deviceId: "test-device-1234", conversations: [], settings: {} }),
+  });
+  assert.equal(res.status, 200);
+  const j = await res.json();
+  assert.equal(j.enabled, false);
+});
+
+test("PUT /api/conversations مع deviceId غير صالح → 400", async () => {
+  const res = await fetch(`${BASE}/api/conversations`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ deviceId: "!!", conversations: [], settings: {} }),
+  });
+  assert.equal(res.status, 400);
+});

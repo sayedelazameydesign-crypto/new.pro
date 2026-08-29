@@ -29,8 +29,11 @@
 
 **تعريف الإنجاز:** رسالة حقيقية من Gemini على الرابط العمومي خلال <10 ثوانٍ.
 
-## 🟠 المرحلة 2 — الذاكرة والمزامنة السحابية (3–5 أيام)
+## 🟠 المرحلة 2 — الذاكرة والمزامنة السحابية (⚠️ قيد التنفيذ)
 **الهدف:** محادثاتك تتبعك على أي جهاز.
+
+> ✅ **البنية جاهزة تقنيًا** (2026-08-29): `lib/storage-neon.ts` + `/api/conversations` (GET/PUT/DELETE) + دمج ذكي في الواجهة + مؤشر ☁️ + اختبارات (15/15).
+> ⏳ **الخطوة المتبقية:** إضافة `DATABASE_URL` من Neon (تعليمات في README) — الجدول يُنشأ تلقائيًا.
 - نفّذ واجهة `ConversationStore` بـ **Neon (Postgres مجاني)** — `lib/storage/neon.ts`
 - إضافة جدول `conversations` + `messages` (JSONB) — مفتاح `device_id` في `localStorage`
 - `GET /api/conversations` + `PUT /api/conversations` (Route Handlers جديدة — بدون لمس الواجهة)
