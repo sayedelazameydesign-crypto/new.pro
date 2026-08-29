@@ -4,6 +4,8 @@
 
 **منصة محادثة ذكية كاملة** تعمل بالمجان حتى النشر — بدون بطاقة، بدون تكلفة.
 
+🔗 **الموقع الحي:** [https://nawah-ai-alpha.vercel.app](https://nawah-ai-alpha.vercel.app) · 📦 **الكود:** [GitHub](https://github.com/sayedelazameydesign-crypto/new.pro)
+
 `Next.js 15 (App Router)` · `Gemini API` · `Hugging Face` · `Vercel` · `TypeScript` · `Tailwind v4`
 
 [![CI — فحص النواة](https://github.com/sayedelazameydesign-crypto/new.pro/actions/workflows/ci.yml/badge.svg)](https://github.com/sayedelazameydesign-crypto/new.pro/actions) · 10/10 اختبارات ✅
