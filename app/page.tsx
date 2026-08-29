@@ -88,7 +88,7 @@ export default function Home() {
     fetch("/api/status")
       .then((r) => r.json())
       .then(setStatus)
-      .catch(() => setStatus({ gemini: false, huggingface: false, groq: false }));
+      .catch(() => setStatus({ gemini: false, huggingface: false, groq: false, search: false }));
     fetch("/api/auth/status")
       .then((r) => r.json())
       .then(setAuthInfo)

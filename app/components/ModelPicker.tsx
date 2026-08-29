@@ -20,12 +20,14 @@ function ProviderBadge({ provider }: { provider: string }) {
     gemini: "bg-blue-500/15 text-blue-400 border-blue-500/25",
     huggingface: "bg-amber-500/15 text-amber-400 border-amber-500/25",
     groq: "bg-orange-500/15 text-orange-400 border-orange-500/25",
+    search: "bg-cyan-500/15 text-cyan-400 border-cyan-500/25",
     demo: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25",
   };
   const label: Record<string, string> = {
     gemini: "Gemini",
     huggingface: "Hugging Face",
     groq: "Groq",
+    search: "بحث",
     demo: "Demo",
   };
   return (

@@ -1,7 +1,7 @@
 // ===== سجل الموديلات (مشترك بين الواجهة والخلفية) =====
 // إضافة موديل جديد = سطر واحد هنا فقط — بدون لمس أي كود آخر.
 
-export type ProviderKind = "gemini" | "huggingface" | "groq" | "demo";
+export type ProviderKind = "gemini" | "huggingface" | "groq" | "search" | "demo";
 
 export interface ModelDef {
   id: string; // "provider:model-name"
@@ -12,6 +12,15 @@ export interface ModelDef {
 }
 
 export const MODELS: ModelDef[] = [
+  // — البحث في الويب (Tavily مجاني 1000 طلب/شهر — إجابة مع مصادر حديثة) —
+  {
+    id: "search:web",
+    name: "البحث في الويب",
+    provider: "search",
+    description: "إجابة محدثة مع مصادر (Tavily مجاني)",
+    free: true,
+  },
+
   // — Groq (مفتاح مجاني من console.groq.com — الأسرع في الرد) —
   {
     id: "groq:openai/gpt-oss-120b",

@@ -5,11 +5,13 @@ import type { ProviderKind } from "../models";
 import { geminiStream } from "./providers/gemini";
 import { huggingfaceStream } from "./providers/huggingface";
 import { groqStream } from "./providers/groq";
+import { webSearchStream } from "./providers/search";
 import { demoStream } from "./providers/demo";
 
 export const hasGemini = () => !!process.env.GEMINI_API_KEY;
 export const hasHuggingFace = () => !!process.env.HF_TOKEN;
 export const hasGroq = () => !!process.env.GROQ_API_KEY;
+export const hasTavily = () => !!process.env.TAVILY_API_KEY;
 
 const FALLBACKS = {
   groq: { model: "openai/gpt-oss-120b", env: "GROQ_API_KEY" },
@@ -27,6 +29,11 @@ export function resolveProvider(modelId: string): {
 
   // وضع العرض: لا يتراجع أبدًا — يُستخدم عمدًا من المستخدم
   if (provider === "demo") return { provider: "demo", model: "demo", apiKey: "" };
+
+  // البحث في الويب: قدرة مستقلة — بدون مفتاح يُظهر خطأً واضحًا (لا تراجع مضلل)
+  if (provider === "search") {
+    return { provider: "search", model: "web", apiKey: process.env.TAVILY_API_KEY ?? "" };
+  }
 
   // 1) المزود المطلوب نفسه إن وُجد مفتاحه
   const direct = pick(model, provider);
@@ -60,7 +67,11 @@ export async function* streamReply(opts: {
   maxTokens: number;
   temperature?: number;
 }): AsyncGenerator<string> {
+  const last = opts.messages[opts.messages.length - 1]?.content ?? "";
   switch (opts.provider) {
+    case "search":
+      yield* webSearchStream({ query: last, apiKey: opts.apiKey });
+      break;
     case "groq":
       yield* groqStream({
         model: opts.model,
@@ -101,7 +112,13 @@ function splitModelIdSafe(id: string): { provider: ProviderKind; model: string }
   let provider = id.slice(0, idx);
   // مرادفات النطاقات: "hf" يُطابق مزود Hugging Face
   if (provider === "hf") provider = "huggingface";
-  if (provider !== "gemini" && provider !== "huggingface" && provider !== "groq" && provider !== "demo") {
+  if (
+    provider !== "gemini" &&
+    provider !== "huggingface" &&
+    provider !== "groq" &&
+    provider !== "search" &&
+    provider !== "demo"
+  ) {
     return { provider: "demo", model: id };
   }
   return { provider: provider as ProviderKind, model: id.slice(idx + 1) };

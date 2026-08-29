@@ -58,6 +58,8 @@ test("GET /api/status يرد بحالة المزودات (بدون كشف الق
   const j = await res.json();
   assert.equal(typeof j.gemini, "boolean");
   assert.equal(typeof j.huggingface, "boolean");
+  assert.equal(typeof j.groq, "boolean");
+  assert.equal(typeof j.search, "boolean");
 });
 
 // ─────────── 3) قائمة الموديلات ───────────
@@ -194,6 +196,24 @@ test("PUT /api/conversations مع deviceId غير صالح → 400", async () =>
     body: JSON.stringify({ deviceId: "!!", conversations: [], settings: {} }),
   });
   assert.equal(res.status, 400);
+});
+
+// ─────────── 12) البحث في الويب (Tavily) ───────────
+test("قائمة الموديلات تتضمن البحث في الويب", async () => {
+  const res = await fetch(`${BASE}/api/models`);
+  const j = await res.json();
+  assert.ok(j.models.some((m) => m.id === "search:web"), "يحتوي search:web");
+});
+
+test("طلب بحث في الويب بدون مفتاح → رسالة واضحة (لا تراجع مضلل)", async () => {
+  const { res, events } = await postChat({
+    messages: [{ role: "user", content: "ما هي أخبار الذكاء الاصطناعي؟" }],
+    modelId: "search:web",
+  });
+  assert.equal(res.status, 200, "لا ينكسر الخادم");
+  assert.equal(events.find((e) => e.provider)?.provider, "search", "المزود = search (لا تراجع)");
+  const errEvt = events.find((e) => e.error);
+  assert.ok(errEvt && /tavily/i.test(errEvt.error), "رسالة خطأ واضحة عن Tavily");
 });
 
 // ─────────── 10) حماية الحدود (Rate Limit) — يُشغَّل أخيرًا لأنه يستهلك الحصة ───────────

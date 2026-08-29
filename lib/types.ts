@@ -30,6 +30,7 @@ export interface ProviderStatus {
   gemini: boolean;
   huggingface: boolean;
   groq: boolean;
+  search: boolean;
 }
 
 export interface ApiError {
