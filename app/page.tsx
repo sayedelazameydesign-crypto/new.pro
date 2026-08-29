@@ -24,7 +24,8 @@ import Welcome from "./components/Welcome";
 import ModelPicker from "./components/ModelPicker";
 import SettingsModal from "./components/SettingsModal";
 import AuthModal from "./components/AuthModal";
-import { getModel } from "@/lib/models";
+import { getModel, splitModelId } from "@/lib/models";
+import { getKey, PROVIDER_TO_KEY } from "@/lib/keys";
 import { makeT } from "@/lib/i18n";
 import { DEFAULTS_SETTINGS, LocalStore, newConversation, titleFromMessages } from "@/lib/storage";
 import { pullRemote, pushRemote, mergeConversations } from "@/lib/sync";
@@ -166,6 +167,9 @@ export default function Home() {
       }));
 
       const model = getModel(settings.modelId);
+      // مفتاح لوحة المتصفح (إن وُجد) يُرسل مع الطلب — يفعّل المزود فورًا دون بيئة
+      const keyName = PROVIDER_TO_KEY[splitModelId(settings.modelId).provider];
+      const apiKeyOverride = keyName ? getKey(keyName) : "";
       const ac = new AbortController();
       abortRef.current = ac;
       setStreaming(true);
@@ -181,6 +185,7 @@ export default function Home() {
             modelId: settings.modelId,
             system: settings.system,
             temperature: settings.temperature,
+            ...(apiKeyOverride ? { apiKey: apiKeyOverride } : {}),
           }),
           signal: ac.signal,
         });

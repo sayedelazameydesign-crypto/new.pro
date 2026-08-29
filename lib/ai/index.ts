@@ -19,8 +19,9 @@ const FALLBACKS = {
   huggingface: { model: "Qwen/Qwen2.5-7B-Instruct", env: "HF_TOKEN" },
 } as const;
 
-/** قرار المزود مع تراجع تلقائي ذكي (Fallback) — لا يفشل الطلب أبدًا إن وُجد أي مفتاح */
-export function resolveProvider(modelId: string): {
+/** قرار المزود مع تراجع تلقائي ذكي (Fallback) — لا يفشل الطلب أبدًا إن وُجد أي مفتاح
+ * overrideKey: مفتاح مُرسل من المتصفح (لوحة المفاتيح) — يتقدّم على البيئة في الجلسة */
+export function resolveProvider(modelId: string, overrideKey?: string): {
   provider: ProviderKind;
   model: string;
   apiKey: string;
@@ -32,11 +33,17 @@ export function resolveProvider(modelId: string): {
 
   // البحث في الويب: قدرة مستقلة — بدون مفتاح يُظهر خطأً واضحًا (لا تراجع مضلل)
   if (provider === "search") {
-    return { provider: "search", model: "web", apiKey: process.env.TAVILY_API_KEY ?? "" };
+    return {
+      provider: "search",
+      model: "web",
+      apiKey: overrideKey || process.env.TAVILY_API_KEY || "",
+    };
   }
 
-  // 1) المزود المطلوب نفسه إن وُجد مفتاحه
-  const direct = pick(model, provider);
+  // 1) المزود المطلوب نفسه: مفتاح المستخدم المحلي أولًا، ثم بيئة الخادم
+  const direct = overrideKey
+    ? { provider, model, apiKey: overrideKey.slice(0, 300) }
+    : pick(model, provider);
   if (direct) return direct;
 
   // 2) تراجع تلقائي حسب الأولوية العامة: Groq → Gemini → HF

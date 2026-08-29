@@ -96,6 +96,15 @@ const dict: Record<Lang, Record<string, string>> = {
     account: "حساب",
     syncedAccount: "متزامن عبر الحساب",
     syncedDevice: "متزامن عبر الجهاز",
+    searchStatus: "بحث في الويب (Tavily)",
+    keysInputPlaceholder: "الصق المفتاح هنا…",
+    keySave: "حفظ",
+    keySaved: "حُفظ ✓",
+    keyShow: "إظهار",
+    keyHide: "إخفاء",
+    keyEnv: "بيئة",
+    keyLocal: "محلي",
+    keysHint: "تُحفظ في متصفحك فقط وتُرسل مع كل طلب — ولا تظهر لأي جهة غير نواة. إن وُجد المفتاح في بيئة Vercel فهو صاحب الأولوية. لإلغاء أثر المفتاح امسح الحقل واحفظ.",
   },
 
   en: {
@@ -191,6 +200,15 @@ const dict: Record<Lang, Record<string, string>> = {
     account: "Account",
     syncedAccount: "Synced via account",
     syncedDevice: "Synced via device",
+    searchStatus: "Web search (Tavily)",
+    keysInputPlaceholder: "Paste key here…",
+    keySave: "Save",
+    keySaved: "Saved ✓",
+    keyShow: "Show",
+    keyHide: "Hide",
+    keyEnv: "Env",
+    keyLocal: "Local",
+    keysHint: "Stored only in your browser and sent with each request. Vercel env vars take priority. Clear the field and save to remove a local key.",
   },
 };
 

@@ -3,8 +3,9 @@
 // ===== نافذة الإعدادات: الموديل، تعليمات النظام، الإبداعية، المظهر، اللغة، المفاتيح، البيانات =====
 
 import { useRef, useState } from "react";
-import { X, Download, Upload, ExternalLink, KeyRound, Moon, Sun, Languages, Save } from "lucide-react";
+import { X, Download, Upload, ExternalLink, KeyRound, Moon, Sun, Languages, Save, Eye, EyeOff } from "lucide-react";
 import { MODELS } from "@/lib/models";
+import { getKey, saveKey, type KeyName } from "@/lib/keys";
 import type { ProviderStatus, Settings } from "@/lib/types";
 import type { TFunc } from "@/lib/i18n";
 
@@ -140,40 +141,27 @@ export default function SettingsModal({ settings, status, t, onSave, onClose, on
             </div>
           </section>
 
-          {/* المفاتيح المجانية */}
-          <section className="rounded-2xl border border-[var(--border)] p-4 bg-[var(--bg)]/60">
-            <div className="flex items-center gap-2 text-xs font-bold mb-3">
-              <KeyRound size={14} />
-              {t("keys")}
-            </div>
-            <div className="space-y-2.5 text-[13px]">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">{t("geminiStatus")}</span>
-                <span className={`text-xs font-bold ${status?.gemini ? "text-emerald-400" : "text-red-400"}`}>
-                  {status?.gemini ? t("active") : t("inactive")}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">{t("hfStatus")}</span>
-                <span className={`text-xs font-bold ${status?.huggingface ? "text-emerald-400" : "text-red-400"}`}>
-                  {status?.huggingface ? t("active") : t("inactive")}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">Groq</span>
-                <span className={`text-xs font-bold ${status?.groq ? "text-emerald-400" : "text-red-400"}`}>
-                  {status?.groq ? t("active") : t("inactive")}
-                </span>
+          {/* لوحة إدخال المفاتيح — تُحفظ في المتصفح وتعمل فورًا */}
+          <section className="rounded-2xl border border-[var(--border)] p-4 bg-[var(--bg)]/60 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-bold">
+                <KeyRound size={14} />
+                {t("keys")}
               </div>
               <a
                 href="https://aistudio.google.com/apikey"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 text-[12px] font-bold text-indigo-400 hover:text-indigo-300"
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-400 hover:text-indigo-300"
               >
-                {t("getKey")} <ExternalLink size={11} />
+                {t("getKey")} <ExternalLink size={10} />
               </a>
             </div>
+            <KeyRow name="GEMINI_API_KEY" label={t("geminiStatus")} envActive={!!status?.gemini} t={t} />
+            <KeyRow name="GROQ_API_KEY" label="Groq" envActive={!!status?.groq} t={t} />
+            <KeyRow name="HF_TOKEN" label={t("hfStatus")} envActive={!!status?.huggingface} t={t} />
+            <KeyRow name="TAVILY_API_KEY" label={t("searchStatus")} envActive={!!status?.search} t={t} />
+            <p className="text-[10px] leading-relaxed text-[var(--muted)]">{t("keysHint")}</p>
           </section>
 
           {/* البيانات */}
@@ -218,6 +206,75 @@ export default function SettingsModal({ settings, status, t, onSave, onClose, on
           </button>
           <p className="text-center text-[10px] text-[var(--muted)]">{t("docs")}</p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ===== صف إدخال مفتاح: إظهار/إخفاء + حفظ محلي (BYOK) =====
+function KeyRow({
+  name,
+  label,
+  envActive,
+  t,
+}: {
+  name: KeyName;
+  label: string;
+  envActive: boolean;
+  t: TFunc;
+}) {
+  const [val, setVal] = useState(() => getKey(name));
+  const [saved, setSaved] = useState(false);
+  const [show, setShow] = useState(false);
+
+  const localActive = !!getKey(name);
+  const active = envActive || localActive;
+  const src = envActive ? t("keyEnv") : localActive ? t("keyLocal") : t("inactive");
+
+  const save = () => {
+    saveKey(name, val);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <span className="font-semibold text-[13px]">{label}</span>
+        <span className={`text-[11px] font-bold ${active ? "text-emerald-400" : "text-red-400/80"}`}>
+          {active ? `✓ ${src}` : src}
+        </span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <div className="flex-1 flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-[var(--bg)] border border-[var(--border)] focus-within:border-indigo-500 transition-colors">
+          <input
+            type={show ? "text" : "password"}
+            value={val}
+            onChange={(e) => setVal(e.target.value)}
+            placeholder={t("keysInputPlaceholder")}
+            dir="ltr"
+            className="flex-1 bg-transparent outline-none text-[12px] placeholder:text-[var(--muted)]"
+          />
+          <button
+            type="button"
+            onClick={() => setShow((s) => !s)}
+            className="text-[var(--muted)] hover:text-[var(--text)]"
+            title={show ? t("keyHide") : t("keyShow")}
+          >
+            {show ? <EyeOff size={13} /> : <Eye size={13} />}
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={save}
+          className={`px-3 py-2 rounded-xl text-[11px] font-bold border transition-colors ${
+            saved
+              ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+              : "bg-[var(--bg)] border-[var(--border)] hover:border-indigo-500"
+          }`}
+        >
+          {saved ? t("keySaved") : t("keySave")}
+        </button>
       </div>
     </div>
   );

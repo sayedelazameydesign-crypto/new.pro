@@ -13,6 +13,7 @@ interface ChatBody {
   modelId?: string;
   system?: string;
   temperature?: number;
+  apiKey?: string; // مفتاح من لوحة المتصفح (BYOK) — اختياري
 }
 
 const MAX_INPUT_PAYLOAD = 60_000; // ~60KB بأمان
@@ -73,8 +74,9 @@ export async function POST(req: NextRequest) {
   const desiredModelId =
     typeof body.modelId === "string" && body.modelId ? body.modelId : "gemini:gemini-2.5-flash";
 
-  // قرار المزود + تراجع تلقائي حسب المفاتيح المتوفرة
-  const resolved = resolveProvider(desiredModelId);
+  // مفتاح مُرسل من لوحة المتصفح — يتقدّم على بيئة الخادم في هذه الجلسة
+  const overrideKey = typeof body.apiKey === "string" ? body.apiKey.trim().slice(0, 300) : "";
+  const resolved = resolveProvider(desiredModelId, overrideKey || undefined);
 
   const system = typeof body.system === "string" ? body.system : "";
   const maxTokens = Math.min(2048, Number(process.env.MAX_TOKENS) || 1024);

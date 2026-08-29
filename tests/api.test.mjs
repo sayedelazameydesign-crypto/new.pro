@@ -216,6 +216,19 @@ test("طلب بحث في الويب بدون مفتاح → رسالة واضح�
   assert.ok(errEvt && /tavily/i.test(errEvt.error), "رسالة خطأ واضحة عن Tavily");
 });
 
+test("إرسال مفتاح من لوحة المتصفح (apiKey) يفعّل المزود فورًا دون بيئة", async () => {
+  const { res, events } = await postChat({
+    messages: [{ role: "user", content: "أخبار التقنية" }],
+    modelId: "search:web",
+    apiKey: "tvly-fake-key-for-test", // مفتاح وهمي — يكفي لإثبات المسار
+  });
+  assert.equal(res.status, 200);
+  assert.equal(events.find((e) => e.provider)?.provider, "search", "المزود يبقى search");
+  const errEvt = events.find((e) => e.error);
+  assert.ok(errEvt, "يوجد رد من المحاولة (نجاح أو خطأ محدد)");
+  assert.ok(!/غير مفعّل|TAVILY_API_KEY/.test(errEvt.error), "لم يعد يشتكي من غياب المفتاح");
+});
+
 // ─────────── 10) حماية الحدود (Rate Limit) — يُشغَّل أخيرًا لأنه يستهلك الحصة ───────────
 test("تجاوز حد الرسائل يعيد 429 برسالة واضحة وترويسات الحماية", async () => {
   const statuses = [];
