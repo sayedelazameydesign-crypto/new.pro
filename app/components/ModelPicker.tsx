@@ -78,7 +78,7 @@ export default function ModelPicker({ modelId, status, t, onPick }: Props) {
                         isFree ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"
                       }`}
                     >
-                      مجاني
+                      {t("free")}
                     </span>
                   </div>
                   <div className="text-[11px] text-[var(--muted)] truncate mt-0.5">{m.description}</div>
@@ -93,9 +93,16 @@ export default function ModelPicker({ modelId, status, t, onPick }: Props) {
           <div className="mt-1 pt-2 border-t border-[var(--border)] px-3 pb-1">
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-[var(--muted)] mb-1.5">
               <Cpu size={11} />
-              {t("keys")}
+              {t("providerKeys")}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
+              <span
+                className={`flex-1 text-center px-2 py-1 rounded-lg text-[10px] font-bold ${
+                  status?.groq ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/10 text-red-400/80"
+                }`}
+              >
+                Groq {status?.groq ? "✓" : "—"}
+              </span>
               <span
                 className={`flex-1 text-center px-2 py-1 rounded-lg text-[10px] font-bold ${
                   status?.gemini ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/10 text-red-400/80"

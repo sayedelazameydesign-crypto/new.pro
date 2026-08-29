@@ -24,3 +24,12 @@ jobs:
 
       - name: بناء الإنتاج
         run: npm run build
+
+      - name: تشغيل الاختبارات (ضد خادم الإنتاج)
+        run: |
+          npm run start &
+          sleep 6
+          npm test
+          EXIT=$?
+          kill %1 2>/dev/null || true
+          exit $EXIT

@@ -70,6 +70,15 @@ const dict: Record<Lang, Record<string, string>> = {
     retry: "إعادة المحاولة",
     currentModel: "الموديل الحالي",
     docs: "التوثيق الكامل في ملف README داخل المشروع",
+    demoBanner: "وضع العرض التجريبي — أضف مفتاحًا مجانيًا لتفعيل الذكاء الحقيقي",
+    addKey: "إضافة مفتاح",
+    typing: "جاري الكتابة…",
+    free: "مجاني",
+    providerKeys: "حالة المزودات",
+    invalidFile: "ملف غير صالح",
+    menu: "القائمة",
+    editHint: "تعديل العنوان",
+    selected: "محدد",
   },
 
   en: {
@@ -139,6 +148,15 @@ const dict: Record<Lang, Record<string, string>> = {
     retry: "Retry",
     currentModel: "Current model",
     docs: "Full docs in the project README",
+    demoBanner: "Demo mode — add a free key to enable real AI",
+    addKey: "Add a key",
+    typing: "Typing…",
+    free: "Free",
+    providerKeys: "Provider status",
+    invalidFile: "Invalid file",
+    menu: "Menu",
+    editHint: "Edit title",
+    selected: "Selected",
   },
 };
 

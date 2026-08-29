@@ -29,6 +29,7 @@ export interface Settings {
 export interface ProviderStatus {
   gemini: boolean;
   huggingface: boolean;
+  groq: boolean;
 }
 
 export interface ApiError {

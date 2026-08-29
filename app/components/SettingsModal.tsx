@@ -159,6 +159,12 @@ export default function SettingsModal({ settings, status, t, onSave, onClose, on
                   {status?.huggingface ? t("active") : t("inactive")}
                 </span>
               </div>
+              <div className="flex items-center justify-between">
+                <span className="font-semibold">Groq</span>
+                <span className={`text-xs font-bold ${status?.groq ? "text-emerald-400" : "text-red-400"}`}>
+                  {status?.groq ? t("active") : t("inactive")}
+                </span>
+              </div>
               <a
                 href="https://aistudio.google.com/apikey"
                 target="_blank"

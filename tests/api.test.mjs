@@ -154,3 +154,14 @@ test("إرسال سياق طويل يعمل دون انهيار (قص تلقائ
   assert.equal(res.status, 200);
   assert.ok(textOf(events).includes("نواة") || textOf(events).length > 50);
 });
+
+// ─────────── 8) تمرير الإعدادات (temperature) ───────────
+test("إرسال temperature خارج النطاق يُضبط بأمان (لا ينكسر)", async () => {
+  const { res, events } = await postChat({
+    messages: [{ role: "user", content: "اختبر الإعدادات" }],
+    modelId: "demo",
+    temperature: 99, // يُقص تلقائيًا إلى 1.5
+  });
+  assert.equal(res.status, 200);
+  assert.ok(textOf(events).length > 50);
+});

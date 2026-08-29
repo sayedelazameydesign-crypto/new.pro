@@ -38,6 +38,7 @@ export default function Home() {
   const [showSettings, setShowSettings] = useState(false);
   const [showSidebarMobile, setShowSidebarMobile] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [providerUsed, setProviderUsed] = useState<string | null>(null); // المزود الفعلي كما قرره الخادم
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -57,7 +58,7 @@ export default function Home() {
     fetch("/api/status")
       .then((r) => r.json())
       .then(setStatus)
-      .catch(() => setStatus({ gemini: false, huggingface: false }));
+      .catch(() => setStatus({ gemini: false, huggingface: false, groq: false }));
   }, []);
 
   // ===== الحفظ التلقائي + تطبيق المظهر =====
@@ -127,6 +128,7 @@ export default function Home() {
       abortRef.current = ac;
       setStreaming(true);
       setError(null);
+      setProviderUsed(null);
 
       try {
         const res = await fetch("/api/chat", {
@@ -136,6 +138,7 @@ export default function Home() {
             messages: history,
             modelId: settings.modelId,
             system: settings.system,
+            temperature: settings.temperature,
           }),
           signal: ac.signal,
         });
@@ -154,12 +157,13 @@ export default function Home() {
             if (!line.startsWith("data:")) continue;
             const payload = line.slice(5).trim();
             if (!payload) continue;
-            let evt: { chunk?: string; done?: boolean; error?: string };
+            let evt: { chunk?: string; done?: boolean; error?: string; provider?: string };
             try {
               evt = JSON.parse(payload);
             } catch {
               continue;
             }
+            if (evt.provider) setProviderUsed(evt.provider);
             if (typeof evt.chunk === "string") {
               update(conv.id, (c) => ({
                 ...c,
@@ -286,7 +290,7 @@ export default function Home() {
         setActiveId(null);
       }
     } catch {
-      setError("ملف غير صالح");
+      setError(t("invalidFile"));
     }
   };
 
@@ -325,7 +329,7 @@ export default function Home() {
             <button
               className="md:hidden p-2 rounded-xl hover:bg-[var(--bg)]"
               onClick={() => setShowSidebarMobile(true)}
-              title="القائمة"
+              title={t("menu")}
             >
               <Menu size={18} />
             </button>
@@ -349,7 +353,7 @@ export default function Home() {
             {streaming && (
               <span className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/12 text-amber-400 font-bold text-[11px]">
                 <Square size={10} className="animate-pulse" />
-                جاري الكتابة…
+                {t("typing")}
               </span>
             )}
             <button
@@ -361,6 +365,19 @@ export default function Home() {
             </button>
           </div>
         </header>
+
+        {/* تنبيه وضع العرض التجريبي — يرشد المستخدم لإضافة مفتاح */}
+        {providerUsed === "demo" && (
+          <div className="mx-auto w-full max-w-3xl px-4 pt-3">
+            <button
+              onClick={() => setShowSettings(true)}
+              className="w-full flex items-center justify-between gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] font-bold text-amber-400 hover:bg-amber-500/15 transition-colors text-start"
+            >
+              <span className="truncate">{t("demoBanner")}</span>
+              <span className="shrink-0 underline underline-offset-2">{t("addKey")} ←</span>
+            </button>
+          </div>
+        )}
 
         {/* الرسائل */}
         <div

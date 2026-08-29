@@ -52,6 +52,7 @@ export async function* streamReply(opts: {
   messages: { role: string; content: string }[];
   apiKey: string;
   maxTokens: number;
+  temperature?: number;
 }): AsyncGenerator<string> {
   switch (opts.provider) {
     case "groq":
@@ -60,6 +61,7 @@ export async function* streamReply(opts: {
         messages: opts.messages,
         apiKey: opts.apiKey,
         maxTokens: opts.maxTokens,
+        temperature: opts.temperature,
       });
       break;
     case "gemini":
@@ -68,6 +70,7 @@ export async function* streamReply(opts: {
         messages: opts.messages,
         apiKey: opts.apiKey,
         maxTokens: opts.maxTokens,
+        temperature: opts.temperature,
       });
       break;
     case "huggingface":
@@ -76,6 +79,7 @@ export async function* streamReply(opts: {
         messages: opts.messages,
         token: opts.apiKey,
         maxTokens: opts.maxTokens,
+        temperature: opts.temperature,
       });
       break;
     case "demo":
