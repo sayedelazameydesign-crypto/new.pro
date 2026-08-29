@@ -1,4 +1,6 @@
-// ===== مزود Hugging Face (توكن مجاني + serverless inference) =====
+// ===== مزود Hugging Face (توكن مجاني + router inference) =====
+// ملاحظة مهمة (اكتُشفت بالاختبار الحي): api-inference.huggingface.co لم يعد يعمل
+// (نطاق متوقف/لا يستجيب) — لذا router.huggingface.co هو المسار الأساسي.
 
 import { sseData } from "../sse";
 import type { ProviderIO } from "./gemini";
@@ -18,29 +20,41 @@ export async function* huggingfaceStream(
     Authorization: `Bearer ${opts.token}`,
   };
 
-  // المحاولة 1: endpoint الكلاسيكي المجاني للموديل
-  const modelsUrl = `https://api-inference.huggingface.co/models/${opts.model}/v1/chat/completions`;
-  let res = await fetch(modelsUrl, { method: "POST", headers, body: JSON.stringify(payload) });
-
-  // المحاولة 2: router الرسمي (يوجه لأي مزود متاح لحسابك)
-  if (!res.ok) {
+  // المحاولة 1: router الرسمي (يعمل حاليًا — يوجّه لأي مزود متاح لحسابك)
+  let res: Response | null = null;
+  let routerErr = "";
+  try {
     const routerUrl = "https://router.huggingface.co/v1/chat/completions";
     const routerPayload = { ...payload, provider: { provider: "hf-inference", model: opts.model } };
-    res = await fetch(routerUrl, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(routerPayload),
-    });
+    res = await fetch(routerUrl, { method: "POST", headers, body: JSON.stringify(routerPayload) });
+    if (!res.ok) routerErr = `router: ${res.status} ${(await res.text().catch(() => "")).slice(0, 200)}`;
+  } catch (e) {
+    routerErr = `router: fetch failed (${e instanceof Error ? e.message : "network"})`;
+    res = null;
   }
 
+  // المحاولة 2: endpoint الكلاسيكي (إن فشل الـ router — قد يعود مستقبلًا)
+  if (!res || !res.ok) {
+    try {
+      const modelsUrl = `https://api-inference.huggingface.co/models/${opts.model}/v1/chat/completions`;
+      res = await fetch(modelsUrl, { method: "POST", headers, body: JSON.stringify(payload) });
+      if (res.ok) console.warn("HF: استخدمنا endpoint الكلاسيكي (router فشل)");
+    } catch {
+      res = null;
+    }
+  }
+
+  if (!res) {
+    throw new Error(`HuggingFace: تعذر الاتصال (${routerErr || "فشل الشبكة"})`);
+  }
   if (!res.ok) {
-    const t = await res.text().catch(() => "");
+    const t = await res.text().catch(() => routerErr);
     let hint = "";
     if (res.status === 401 || res.status === 403)
       hint = " التوكن غير صحيح أو بلا صلاحية لهذا الموديل.";
     if (res.status === 404) hint = " الموديل غير متاح عبر inference المجاني؛ جرّب موديلًا آخر من القائمة.";
     if (res.status === 429) hint = " تجاوزت حصة المجاني — انتظر قليلًا.";
-    throw new Error(`HuggingFace (${res.status}): ${t.slice(0, 300)}${hint}`);
+    throw new Error(`HuggingFace (${res.status}): ${String(t).slice(0, 300)}${hint}`);
   }
   if (!res.body) throw new Error("HuggingFace: استجابة فارغة");
 
