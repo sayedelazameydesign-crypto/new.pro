@@ -170,3 +170,21 @@ BASE_URL=http://localhost:3001 npm test   # ضد أي خادم آخر
 
 ## الإثبات الحي (new-pro-kohl)
 - طلب بمفتاح وهمي من "اللوحة" → وصل Tavily فعلاً: `Unauthorized: missing or invalid API key` ← المسار كامل
+
+---
+
+# 🔎 نتائج تفعيل البحث الحي (Tavily)
+
+> **التاريخ:** 2026-08-29 · المفتاح: `tvly-dev-...` (أُضيف Secret على Vercel → 201)
+
+## الإثبات على new-pro-kohl.vercel.app
+```
+GET /api/status → {"gemini":true,"huggingface":true,"groq":true,"search":true}  ← 🔥 صحح
+POST /api/chat modelId=search:web:
+  provider: search
+  "الخلاصة: Recent AI news includes significant developments in GPT models..."
+  "### أحدث تطورات الذكاء الاصطناعي 2026 — دليلك الشامل"
+  "...البيت الأبيض يجتمع مع OpenAI وجوجل وأنثروبيك..."
+  (استمرت النتائج مع روابط المصادر حتى النهاية) — ~2.2 ثانية
+```
+- المفتاح يعمل من بيئة Vercel (أولوية) ومن لوحة المتصفح (BYOK) على حد سواء.
