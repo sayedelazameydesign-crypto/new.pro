@@ -41,15 +41,14 @@ function makeFakeStore() {
       return hit ? { id: hit.id } : null;
     },
     async createUser(identity) {
-      // نفس قيد UNIQUE(email) في nahwa_users — إن تعارض نرمي
-      const email = (identity.email ?? "").toLowerCase();
-      if ([...users.values()].some((u) => u.email === email)) {
-        throw new Error("duplicate email (UNIQUE nahwa_users.email)");
-      }
+      // دلالات ON CONFLICT (email) DO NOTHING: لا نرمي عند التعارض — نتقارب على الموجود
+      const email = (identity.email ?? "").trim().toLowerCase() || `oauth-${identity.provider}-${identity.providerAccountId}@noreply.local`;
+      const existing = [...users.values()].find((u) => u.email === email);
+      if (existing) return { userId: existing.id };
       const id = `user-${++seq}`;
       users.set(id, {
         id,
-        email: email || `anon-${id}@local`,
+        email,
         name: identity.name ?? null,
         password_hash: "", // مستخدم OAuth بلا كلمة مرور
         created_at: Date.now(),

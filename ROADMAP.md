@@ -48,6 +48,7 @@
 - ✅ برهان حي: جهازان بنفس الحساب يريان نفس المحادثات
 - ✅ **Google OAuth مفعّل حيًا (2026-08-29)** — `AUTH_GOOGLE_ID/SECRET` في Vercel + التدفق مُثبت: `/api/auth/signin/google` → `accounts.google.com` ببياناتنا (client_id + redirect_uri مسجّلان)
 - ✅ **شريحة AUTH IDENTITY HARDENING (2026-08-29)** — `ensureApplicationUser()` + جدول `nahwa_auth_identities` (UNIQUE) + canonical `session.user.id` + Provisioning إلزامي في دورة الجلسة + 12 اختبارًا بهوية اصطناعية (بلا حساب بشري)
+- ✅ **إغلاق سباق الهوية (2026-08-30)** — اختبار 10 استدعاءات متزامنة كشف عطبًا (1/10 تنجح)؛ أُصلح بـ `ON CONFLICT (email) DO NOTHING RETURNING` + converge → RACE-R1/R2 خضراء (10/10 → صف واحد) — 39/39
 - ⏳ (اختياري لاحقًا) GitHub OAuth — بانتظار `AUTH_GITHUB_ID/SECRET` + middleware
 - ⏳ (خارجي بطبيعته) Real Google Browser E2E — موافقة بشرية بحساب Google؛ ليس شرطًا لتشغيل CI أو النظام
 

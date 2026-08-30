@@ -183,7 +183,7 @@ syncScope = user:<canonicalUserId>
 | **Provisioning إلزامي** | داخل `callbacks.jwt` (قبل توقيع الجلسة) — فشل Provisioning = لا جلسة (INVARIANT-01) |
 | **المفتاح الأساسي للهوية** | `(provider, providerAccountId)` — وليس البريد؛ البريد وسيلة ربط موثقة فقط |
 | **سياسة الربط (verified-email)** | مزود OAuth أثبت ملكية البريد → يُسمح بربطه بمستخدم قائم بنفس البريد (لا إنشاء مكرر) |
-| **Idempotency** | نفس الهوية N مرة → نفس المستخدم دائمًا؛ `ON CONFLICT DO NOTHING` + UNIQUE في قاعدة البيانات |
+| **Idempotency (تحت التوازي)** | نفس الهوية N مرة → نفس المستخدم دائمًا؛ `INSERT ... ON CONFLICT (email) DO NOTHING RETURNING` + إعادة حل (converge) — UNIQUE في قاعدة البيانات هو الحامي، مُثبت باختبار سباق 10 استدعاءات متزامنة |
 | **لا حالة جزئية** | فشل الربط بعد الإنشاء → تراجع (undo) عن المستخدم الجديد |
 | **لا اعتمادات في سجل المستخدم** | لا تُخزَّن أبدًا توكنات/أسرار/أكواد المزودين (INVARIANT-03) |
 | **قابلية الاختبار** | `IdentityStore` (Port/Adapter): يُختبر بهوية اصطناعية 100% دون أي حساب بشري — CI لا يعتمد على موافقة Google |
@@ -319,7 +319,7 @@ nahwa_users(
 ```
 npm run typecheck   → tsc --noEmit
 npm run build       → next build
-npm test            → 37/37 (25 API + 12 هوية: إنشاء/إعادة استخدام/ربط/فشل/نطاق/لا تكرار/لا تسريب)
+npm test            → 39/39 (25 API + 12 هوية + 2 سباق: 10 استدعاءات متزامنة → صف واحد)
 npm run check:keys  → تشخيص المزودات
 ```
 
@@ -371,7 +371,8 @@ git push origin main → GitHub (CI: يبني ويختبر) → Vercel (نشر �
 AUTH-1  OAuth Authorization Contract        PASS   ← يعمل إلى Google ببياناتنا (متصفح حقيقي)
 AUTH-2  OAuth Callback Contract             PASS   ← مسار callback حي + تبادل كود مقبول (invalid_grant)
 AUTH-3  Application Provisioning            PASS   ← ensureApplicationUser() إلزامي في دورة الجلسة (12 اختبارًا)
-AUTH-4  Identity Idempotency                PASS   ← نفس الهوية N مرة → مستخدم واحد (UNIQUE + اختبارات)
+AUTH-4  Identity Idempotency                PASS   ← تسلسلي N مرة + 10 استدعاءات متزامنة (سباق) → صف واحد
+                                                    (UNIQUE + ON CONFLICT DO NOTHING RETURNING + converge — RACE-R1/R2)
 AUTH-5  Canonical Session Identity          PASS   ← session.user.id = nahwa_users.id (ليس معرّف المزود)
 AUTH-6  Sync Scope                          PASS   ← scope = user:<canonicalUserId> فقط
 AUTH-7  Real Google Browser E2E (موافقة)   MANUAL / PENDING ← يتطلب موافقة بشرية بحساب Google

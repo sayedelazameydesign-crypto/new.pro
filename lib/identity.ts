@@ -24,6 +24,7 @@
 
 import { db, ensureTables, findUserByEmail } from "./auth-db";
 import { uid } from "./utils";
+import { createHash } from "node:crypto";
 
 export type OAuthProvider = "google" | "github";
 
@@ -45,10 +46,18 @@ export interface EnsureIdentityResult {
 export interface IdentityStore {
   findIdentity(provider: OAuthProvider, providerAccountId: string): Promise<{ userId: string } | null>;
   findUserByEmail(email: string): Promise<{ id: string } | null>;
+  /** إنشاء مستخدم جديد — أو إرجاع الموجود عند تعارض البريد (ON CONFLICT DO NOTHING RETURNING).
+   *  بهذا يتقارب السباق المتوازي على صف واحد: 10 استدعاءات متزامنة → صف واحد (UNIQUE(email) هو الحامي). */
   createUser(identity: AuthIdentity): Promise<{ userId: string }>;
   linkIdentity(userId: string, identity: AuthIdentity): Promise<void>;
   /** تراجع عن مستخدم أُنشئ في نفس العملية (best-effort rollback) */
   removeUserIfFresh(userId: string, note: string): Promise<void>;
+}
+
+/** بريد صناعي حتمي (deterministic) عند غياب بريد المزود — نفس الهوية → نفس البريد → converge */
+function syntheticEmail(provider: string, pid: string): string {
+  const h = createHash("sha256").update(`${provider}:${pid}`).digest("hex").slice(0, 24);
+  return `oauth-${h}@noreply.nawah.local`;
 }
 
 // ===== التنفيذ الحقيقي فوق Neon =====
@@ -69,11 +78,21 @@ export const realIdentityStore: IdentityStore = {
 
   async createUser(identity) {
     await ensureTables();
-    const userId = uid();
-    await db()`
+    const email =
+      (identity.email ?? "").trim().toLowerCase() ||
+      syntheticEmail(identity.provider, identity.providerAccountId);
+    // ON CONFLICT (email) DO NOTHING: يمنع الازدواج حتى تحت التوازي (UNIQUE هو الحامي)
+    const inserted = (await db()`
       INSERT INTO nahwa_users (id, email, name, image, password_hash)
-      VALUES (${userId}, ${identity.email ?? ""}, ${identity.name ?? null}, ${identity.image ?? null}, '')`;
-    return { userId };
+      VALUES (${uid()}, ${email}, ${identity.name ?? null}, ${identity.image ?? null}, '')
+      ON CONFLICT (email) DO NOTHING
+      RETURNING id`) as { id: string }[];
+    if (inserted?.[0]) return { userId: inserted[0].id };
+    // سباق: مستخدم بنفس البريد أُنشئ للتو من استدعاء موازٍ → نتقارب على صفه
+    const existing = (await db()`
+      SELECT id FROM nahwa_users WHERE email = ${email} LIMIT 1`) as { id: string }[];
+    if (existing?.[0]) return { userId: existing[0].id };
+    throw new Error("IDENTITY_CONFLICT: تعذر إنشاء أو إيجاد المستخدم");
   },
 
   async linkIdentity(userId, identity) {
@@ -135,7 +154,9 @@ export async function ensureApplicationUser(
     }
   }
 
-  // 3) مستخدم جديد + ربط — مع تراجع إن فشل الربط (لا حالة جزئية)
+  // 3) مستخدم جديد + ربط — مع تراجع إن فشل الربط (لا حالة جزئية).
+  //    createUser يتقارب على صف واحد حتى تحت التوازي (ON CONFLICT + إعادة حل):
+  //    10 استدعاءات متزامنة لنفس الهوية → صف واحد + نفس canonical userId.
   const fresh = await store.createUser(clean);
   try {
     await store.linkIdentity(fresh.userId, clean);

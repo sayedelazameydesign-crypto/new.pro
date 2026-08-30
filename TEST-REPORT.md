@@ -243,3 +243,36 @@ POST /api/chat modelId=search:web:
 typecheck ✅ · build ✅ · npm test = 37/37 ✅ (التوافق العكسي 25/25 سليم)
 key-policy (BYOK) لم تُمس · لا أسرار جديدة · لا تغيير خارج نطاق auth/provisioning
 ```
+
+---
+
+# 🧪 تقرير الاختبار — الجولة الثامنة-ب (إغلاق سباق الهوية — Concurrency Safety)
+
+> **التاريخ:** 2026-08-30 · **النتيجة:** ✅ **39/39** (25 API + 12 هوية + 2 سباق) · CI success
+
+## لماذا هذه الجولة؟
+اختبار السباق (`tests/identity-race.test.ts`) كشف أن `ensureApplicationUser` **لم يكن آمنًا تحت التوازي**:
+قبل الإصلاح، 10 استدعاءات متزامنة لنفس هوية Google جديدة → **نجح 1 فقط**، والـ9 فشلت بـ
+`duplicate email (UNIQUE nahwa_users.email)` — لأن كل الاستدعاءات تعبر SELECTين (لا شيء) قبل
+أن يبدأ أي INSERT (نافذة check-then-insert غير الذرّية — مطابقة لسلوك Neon الحقيقي).
+الأثر في الإنتاج: تبويبان/إعادة محاولة لتسجيل دخول واحد → فشل أحد الطلبات.
+
+## الإصلاح المصغر (داخل نطاق الشريحة — lib/identity.ts فقط)
+```
+INSERT INTO nahwa_users (...) VALUES (...)
+  ON CONFLICT (email) DO NOTHING
+  RETURNING id
+→ إن رجع صف: استخدمه        (الفائز)
+→ إن لم يرجع: SELECT id WHERE email = ...  (converge على صف الفائز — سباق متوازٍ)
++ بريد صناعي حتمي عند غياب بريد المزود (sha256(provider:pid) → نفس الهوية → نفس البريد → converge)
++ linkIdentity يبقى ON CONFLICT DO NOTHING (آمن أصلًا)
+```
+**الفكرة:** UNIQUE(email) في قاعدة البيانات هو الحامي — لا الكود فقط (كما أوصى المراجِع).
+
+## الأدلة
+```
+قبل:  RACE-R1 ❌ (1/10)  RACE-R2 ❌ (1/10)
+بعد:  RACE-R1 ✅ (10/10 → صف واحد للمستخدم + صف واحد للهوية + نفس canonical)
+       RACE-R2 ✅ (10/10 → نفس النتيجة تحت نافذة RTT غير ذرّية)
+typecheck ✅ · build ✅ · npm test = 39/39 ✅ (التوافق العكسي سليم)
+```
