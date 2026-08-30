@@ -11,12 +11,14 @@ import {
   ImagePlus,
   LogIn,
   LogOut,
+  Mic,
   Paperclip,
   RefreshCw,
   Send,
   Settings as SettingsIcon,
   Square,
   User,
+  Volume2,
   WifiOff,
   X,
 } from "lucide-react";
@@ -29,6 +31,14 @@ import AuthModal from "./components/AuthModal";
 import { getModel, splitModelId } from "@/lib/models";
 import { getKey, PROVIDER_TO_KEY } from "@/lib/keys";
 import { makeT } from "@/lib/i18n";
+import {
+  ambientSpeechApi,
+  createRecognizer,
+  speak,
+  speechAvailable,
+  stopSpeak,
+  type Recognizer,
+} from "@/lib/speech";
 import { DEFAULTS_SETTINGS, LocalStore, newConversation, titleFromMessages } from "@/lib/storage";
 import { pullRemote, pushRemote, mergeConversations } from "@/lib/sync";
 import { copyText, uid } from "@/lib/utils";
@@ -396,6 +406,78 @@ export default function Home() {
     }
   }, [active, input, streaming, createChat, update, t]);
 
+  // ===== الصوت (المرحلة 5.3): إملاء + قراءة عبر Web Speech API — واجهة فقط، بلا خادم =====
+  const [dictating, setDictating] = useState(false);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const recognizerRef = useRef<Recognizer | null>(null);
+  const dictBaseRef = useRef("");
+
+  const speechLang = settings.lang === "ar" ? "ar-SA" : "en-US";
+
+  const toggleDictation = useCallback(async () => {
+    if (dictating) {
+      recognizerRef.current?.stop();
+      setDictating(false);
+      return;
+    }
+    const api = ambientSpeechApi();
+    const { dictation: ok } = speechAvailable(api);
+    if (!ok) {
+      setError(t("speechUnsupported"));
+      return;
+    }
+    try {
+      // طلب إذن الميكروفون صراحةً (بعض المتصفحات تطلبه عند أول استخدام)
+      if (navigator.mediaDevices?.getUserMedia) {
+        await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
+      }
+    } catch {
+      /* sigamos — يأخذ المتصفح القرار عند البدء */
+    }
+    const base = input.trim() ? input.trim() + " " : "";
+    dictBaseRef.current = base;
+    const rec = createRecognizer(api, speechLang, {
+      onText: (text) => setInput(dictBaseRef.current + text),
+      onEnd: () => setDictating(false),
+      onError: (code) => {
+        setDictating(false);
+        if (code !== "no-speech" && code !== "aborted") setError(t("dictationError"));
+      },
+    });
+    if (!rec) {
+      setError(t("speechUnsupported"));
+      return;
+    }
+    recognizerRef.current = rec;
+    setDictating(true);
+    rec.start();
+  }, [dictating, input, speechLang, t]);
+
+  const toggleSpeak = useCallback(
+    (id: string, text: string) => {
+      if (speakingId === id) {
+        stopSpeak(ambientSpeechApi());
+        setSpeakingId(null);
+        return;
+      }
+      const api = ambientSpeechApi();
+      const ok = speak(api, text, speechLang, {
+        onEnd: () => setSpeakingId(null),
+        onError: (code) => setSpeakingId(null),
+      });
+      if (ok) setSpeakingId(id);
+      else setError(t("speechUnsupported"));
+    },
+    [speakingId, speechLang, t]
+  );
+
+  // إيقاف القراءة عند تبديل المحادثة أو بدء بث جديد
+  useEffect(() => {
+    if (speakingId) {
+      stopSpeak(ambientSpeechApi());
+      setSpeakingId(null);
+    }
+  }, [activeId]);
   // ===== إرفاق الملفات (المرحلة 5): تُقرأ base64 وتُرسل مع الرسالة =====
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const handlePickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -643,6 +725,19 @@ export default function Home() {
                               <Copy size={12} />
                               {t("copy")}
                             </button>
+                            {m.role === "assistant" && (
+                              <button
+                                onClick={() => toggleSpeak(m.id, m.content)}
+                                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] hover:bg-[var(--bg)] ${
+                                  speakingId === m.id
+                                    ? "text-emerald-300"
+                                    : "text-[var(--muted)]"
+                                }`}
+                              >
+                                <Volume2 size={12} className={speakingId === m.id ? "animate-pulse" : ""} />
+                                {speakingId === m.id ? t("listenStop") : t("listen")}
+                              </button>
+                            )}
                             {m.role === "assistant" && i === active.messages.length - 1 && (
                               <button
                                 onClick={regenerate}
@@ -731,6 +826,19 @@ export default function Home() {
               >
                 <ImagePlus size={17} />
               </button>
+              <button
+                type="button"
+                onClick={toggleDictation}
+                disabled={streaming}
+                className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
+                  dictating
+                    ? "bg-red-500/15 text-red-300 animate-pulse"
+                    : "text-[var(--muted)] hover:text-emerald-300 hover:bg-emerald-500/10"
+                }`}
+                title={dictating ? t("dictationStop") : t("dictation")}
+              >
+                <Mic size={16} />
+              </button>
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -769,7 +877,11 @@ export default function Home() {
               )}
             </div>
             <div className="text-center text-[10px] text-[var(--muted)] mt-2 select-none">
-              {t("composerHint")}
+              {dictating ? (
+                <span className="text-emerald-400/90">{t("dictationHint")}</span>
+              ) : (
+                t("composerHint")
+              )}
             </div>
           </div>
         </div>
