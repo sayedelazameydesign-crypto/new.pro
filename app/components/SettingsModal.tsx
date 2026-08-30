@@ -141,6 +141,20 @@ export default function SettingsModal({ settings, status, t, onSave, onClose, on
             </div>
           </section>
 
+          {/* CR-006: العناوين الذكية (مفتاح إيقاف) */}
+          <section>
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={form.smartTitle !== false}
+                onChange={(e) => set("smartTitle", e.target.checked)}
+                className="w-4 h-4 accent-indigo-500"
+              />
+              <span className="text-sm font-semibold">{t("smartTitle")}</span>
+            </label>
+            <p className="mt-1.5 text-[11px] text-[var(--muted)] leading-relaxed">{t("smartTitleHint")}</p>
+          </section>
+
           {/* لوحة إدخال المفاتيح — تُحفظ في المتصفح وتعمل فورًا */}
           <section className="rounded-2xl border border-[var(--border)] p-4 bg-[var(--bg)]/60 space-y-4">
             <div className="flex items-center justify-between">
