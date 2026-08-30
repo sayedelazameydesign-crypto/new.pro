@@ -75,12 +75,12 @@ export async function POST(req: NextRequest) {
 
   // 4) التوليد (الاستجابة صورة PNG — أو خطأ عربي معقّم)
   try {
-    const { bytes } = await generateImage(prompt, key);
+    const { bytes, source } = await generateImage(prompt, key);
     return new Response(bytes as unknown as BodyInit, {
       headers: {
         "Content-Type": "image/png",
         "Cache-Control": "no-store",
-        "X-Image-Source": "huggingface-flux",
+        "X-Image-Source": source,
       },
     });
   } catch (err) {
