@@ -403,3 +403,23 @@ typecheck ✅ · next build ✅ · git grep أسرار نظيف ✅ · CI (4c42d
 ## الحالة
 **5.4 = PASS** — acceptance كامل: Trigger/Génération/Persistence/System/Providers + Regression
 (Gemini/Groq/HF بقيم system المزوّدة) + typecheck/build/85/85/CI + Live Verification + Evidence.
+
+---
+
+## الجولة 13 (2026-08-30) — المرحلة 6/1: PWA (manifest + service worker + أيقونات)
+
+**الهدف:** جعل نواة AI قابلًا للتثبيت على الهاتف/سطح المكتب (PWA) — بلا أي خدمة خارجية، بلا مفاتيح.
+
+**المنفذ:**
+- `app/manifest.ts` → يُخدم في `/manifest.webmanifest` (name/short_name/id/start_url/scope/display=standalone/dir=rtl/lang=ar/theme #6366f1/bg #0b0d12/icons 192+512+512maskable)
+- `public/sw.js` → كاش `nawah-v1`: network-first للـHTML (fallback لـ`/`)، cache-first لأصول `/_next/static/` و`/icons/`، **تجاهل تام** لـ`/api/` و`/auth/` وغير-GET (خصوصية)، install→skipWaiting، activate→تنظيف+claim
+- أيقونات RGBA حقيقية (192/512/180) مولّدة بـcairosvg من `app/icon.svg` الجديد (شعار «نواة ذرّة» هندسي — حُلّت مشكلة الخطوط العربية بأنوفنيك: **cairosvg بلا خطوط عربية → تصميم هندسي بلا نص**)
+- تسجيل الخدمة في `page.tsx` (useEffect، catch صامت) + وسوم iOS في `layout.tsx` (manifest/appleWebApp/apple icon)
+
+**النتيجة:**
+```
+npm test   → 88/88 ✅  (85 + 3 PWA: manifest / أيقونات PNG / sw.js)
+typecheck ✅ · next build ✅ · curl: /manifest.webmanifest 200 (application/manifest+json) ·
+/o 200 · /sw.js 200 · /icons/icon-{192,512,180}.png 200 (image/png)
+```
+**الحالة:** المرحلة 6 البند 1 (PWA) = **DONE** — في انتظار الدفع (أُكمل في جولة 14).

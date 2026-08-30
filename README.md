@@ -9,7 +9,7 @@
 
 `Next.js 15 (App Router)` · `Gemini API` · `Hugging Face` · `Vercel` · `TypeScript` · `Tailwind v4`
 
-[![CI — فحص النواة](https://github.com/sayedelazameydesign-crypto/new.pro/actions/workflows/ci.yml/badge.svg)](https://github.com/sayedelazameydesign-crypto/new.pro/actions) · 85/85 اختبارات ✅
+[![CI — فحص النواة](https://github.com/sayedelazameydesign-crypto/new.pro/actions/workflows/ci.yml/badge.svg)](https://github.com/sayedelazameydesign-crypto/new.pro/actions) · 88/88 اختبارات ✅ (تشمل PWA: manifest + أيقونات + service worker)
 
 [واجهة عربية/إنجليزية RTL/LTR] · [بث مباشر (Streaming)] · [مفاتيح مجانية فقط] · [قابلة للتوسع دون هدم المعمارية]
 
@@ -28,6 +28,7 @@
 | ⚙️ **إعدادات غنية** | تعليمات النظام (System Prompt)، الإبداعية (Temperature)، اختيار الموديل |
 | 🧱 **معمارية قابلة للتوسع** | طبقات منفصلة: `lib/ai` (مزودات) → `lib/storage` (تخزين) → `app/api` → الواجهة |
 | 🌍 **ثنائي اللغة** | عربي 🇪🇬 / إنجليزي — بدون إعادة بناء |
+| 📱 **تطبيق قابل للتثبيت (PWA)** | `manifest` كامل RTL + أيقونات 192/512/180 + Service Worker (شبكة أولًا للـHTML، كاش للأصول، لا يلمس `/api/*`) |
 
 ## 🚀 التشغيل المحلي (3 دقائق)
 

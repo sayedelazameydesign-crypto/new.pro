@@ -324,7 +324,7 @@ nahwa_users(
 ```
 npm run typecheck   → tsc --noEmit
 npm run build       → next build
-npm test            → 85/85 (30 API + 12 هوية + 2 سباق + 10 استخراج ملفات + 9 صور + 9 صوت + 8 تذكّر + 5 مزودات)
+npm test            → 88/88 (30 API + 12 هوية + 2 سباق + 10 استخراج + 9 صور + 9 صوت + 8 تذكّر + 5 مزودات + 3 PWA)
 npm run check:keys  → تشخيص المزودات
 ```
 

@@ -4,7 +4,8 @@
 
 ```text
 BASELINE            auth-baseline -> 289c7f5   (AUTH HARDENED / FINAL — محمي، غير قابل للإزاحة)
-CURRENT_CHECKPOINT  4c42d0e — المرحلة 5.4 (التذكّر) مكتملة ومثبتة حيًا (2026-08-30)
+CURRENT_CHECKPOINT  — المرحلة 6 بدأت: PWA مكتملة (manifest + sw.js + أيقونات + تسجيل)
+                   HEAD السابق 229b1e7 (5.4) — دفعة PWA قيد الرفع
 
 STATUS_MATRIX
   - 5.1 = PASS            (قراءة ملفات — مثبتة حيًا)
@@ -27,7 +28,9 @@ COMPLETED
   - توثيق: SYSTEM-GUIDE · BASELINE · TEST-REPORT (12 جولة) · ROADMAP · README
 
 IN_PROGRESS
-  - (لا شيء مفتوح — بين دورات التطوير)
+  - المرحلة 6 — PWA (البند 1): app/manifest.ts + public/sw.js + أيقونات 192/512/180
+    من app/icon.svg (نواة ذرّة — أُعيد تصميمها هندسيًا بلا خطوط نظام) + تسجيل الخادم
+    في page.tsx + وسوم iOS في layout.tsx + 3 اختبارات API جديدة (manifest/icons/sw)
 
 BLOCKED
   - 5.2 LIVE VERIFICATION    = EXTERNAL PROVIDER BLOCKER (حساب HF بلا مزود صور مفعّل — DEFERRED)
@@ -37,16 +40,15 @@ BLOCKED
   - Vercel CLI token                 = منتهي (لا يضر؛ النشر عبر git integration)
   - (بيئي عابر) حصة Gemini المجانية كانت 429 أثناء جولة التحقق — لا أثر على النتائج
 
-TEST_STATUS        85/85 PASS  (30 API + 12 هوية + 2 سباق + 10 استخراج + 9 صور + 9 صوت
-                   + 8 تذكّر + 5 مزودات) — متحققة على CI (4c42d0e = success)
-CI_STATUS          PASS (4c42d0e)
+TEST_STATUS        88/88 PASS  (30 API + 12 هوية + 2 سباق + 10 استخراج + 9 صور + 9 صوت
+                   + 8 تذكّر + 5 مزودات + 3 PWA) — 85/85 سابقة على CI (229b1e7)
+CI_STATUS          PASS (229b1e7) — دفعة PWA قيد الرفع
 DEPLOYMENT_STATUS   LIVE — https://new-pro-kohl.vercel.app (يخدم 4c42d0e؛ دليل 5.4 حي 9/9)
 SECURITY_STATUS    No secret leakage (git grep قبل/بعد كل دفع نظيف) · BYOK/صلاحيات/بنية لم تُمس
 
-NEXT_SAFE_ACTION   من ROADMAP — بعد 5.4: المرحلة 6 (واجهة وصقل) فما بعدها المرحلة 4
-                   (مزودات إضافية Groq/OpenRouter/DeepSeek — تنتظر مفاتيح/أمر المستخدم)
-                   البدائل المصرح بها تلقائيًا من المرحلة 6: PWA (manifest + service worker)
-                   / وضع القراءة (تصدير Markdown/PDF) — تُفحص بالترتيب الدقيق عند البدء
+NEXT_SAFE_ACTION   المرحلة 6 — بند 2: وضع القراءة (تصدير محادثة Markdown/PDF) ثم
+                   بند 3: مشاركة رابط ?c=id ثم E2E ثم التحسينات ثم الذكاء —
+                   بالترتيب الدقيق من ROADMAP؛ كل بند يُغلق باختبارات + CI + دفع
 ```
 
-<!-- تحديث: 2026-08-30 · 5.4 مكتملة ومثبتة حيًا (مسار حقيقي 9/9) · HEAD = 4c42d0e -->
+<!-- تحديث: 2026-08-30 · المرحلة 6: PWA مكتملة (88/88 محليًا) · HEAD = 229b1e7 + دفعة PWA قيد الرفع -->

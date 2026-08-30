@@ -373,3 +373,35 @@ test("POST /api/auth/register كلمة مرور قصيرة → 400", async () =>
   assert.equal(res.status, 400);
 });
 
+
+// ===== المرحلة 6 — PWA (manifest / أيقونات / service worker) =====
+test("GET /manifest.webmanifest → PWA مصدّر صحيحًا", async () => {
+  const res = await fetch(`${BASE}/manifest.webmanifest`);
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get("content-type") || "", /json|manifest/i);
+  const m = await res.json();
+  assert.equal(m.name, "نواة AI — مساعد ذكي مجاني");
+  assert.equal(m.display, "standalone");
+  assert.equal(m.dir, "rtl");
+  assert.ok(Array.isArray(m.icons) && m.icons.some((i) => i.sizes === "192x192") && m.icons.some((i) => i.sizes === "512x512"));
+});
+
+test("GET /icons/icon-192.png وicon-512.png → أيقونات PNG صالحة", async () => {
+  for (const p of ["/icons/icon-192.png", "/icons/icon-512.png"]) {
+    const res = await fetch(`${BASE}${p}`);
+    assert.equal(res.status, 200, p);
+    assert.match(res.headers.get("content-type") || "", /image\/png/);
+    const buf = Buffer.from(await res.arrayBuffer());
+    assert.equal(buf[0], 0x89, `توقيع PNG لـ${p}`);
+    assert.equal(buf[1], 0x50, `الحرف P لـ${p}`);
+    assert.ok(buf.length > 1000, `${p} ليس تافهًا (${buf.length} بايت)`);
+  }
+});
+
+test("GET /sw.js → service worker يُخدم بنوع JS", async () => {
+  const res = await fetch(`${BASE}/sw.js`);
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get("content-type") || "", /javascript|text\/plain/i);
+  const t = await res.text();
+  assert.ok(t.includes("addEventListener") && t.includes("fetch"));
+});

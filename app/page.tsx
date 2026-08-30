@@ -113,6 +113,10 @@ export default function Home() {
       .then((r) => r.json())
       .then(setAuthInfo)
       .catch(() => setAuthInfo({ enabled: false, user: null }));
+    // PWA (المرحلة 6): تسجيل Service Worker — يتجاهل بصمت مَن لا يدعمه
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
   }, [loadAll]);
 
   // ===== الحفظ التلقائي المحلي + دفع للسحابة (مؤجل) =====
