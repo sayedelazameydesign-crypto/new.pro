@@ -1,8 +1,9 @@
 # 🎨 FRONTEND-SPEC — نواة AI (Frontend Source of Truth)
 
-> **الحالة:** PROPOSED — بانتظار المراجعة والاعتماد (docs/frontend-spec → PR → CI → Review → Merge)
-> **المرجع:** كود main `d8d0d9e` (بعد Item 5) — مواصفة «كما هي» مربوطة بالكود، لا وثيقة تصميم منفصلة.
-> **قاعدة الحوكمة:** *اختبر قبل التطوير، وفعّل قبل التوثيق.* — لا تُسجَّل حالة «حي» إلا مع **Evidence** (فهرس §13).
+> **الحالة:** ✅ **APPROVED & MERGED v1.1** — مرجع معتمد في `main`
+> **المرجع:** `main` @ `8918512` (بعد دمج PR #3 `51a6519` → CI ✓ وPR #2 `8918512` → CI ✓)
+> **سجل الاعتماد:** v1.0 (PR #3 `51a6519`) → مراجعة المالك → v1.1 (PR #4 — §14/15/16 + تصحيح الترويسة)
+> **قاعدة الحوكمة:** *اختبر قبل التطوير، وفعّل قبل التوثيق.* — لا تُسجَّل حالة «حي» إلا مع **Evidence** (فهرس §13، E-007 للدمج).
 > **لا كود يُعدل بهذا المستند** — أي تغيير كود لاحق يمر عبر `Capability → UI → Evidence → DoD → CI → PR`.
 
 ---
@@ -98,8 +99,15 @@
 بريد/كلمة (scrypt في Neon) + Google/GitHub عند env؛ OAuth → `/api/auth/callback/google` → provisioning داخل `jwt` callback → **لا جلسة بلا مستخدم تطبيقي (INVARIANT-01)».
 - **معلومة حالة:** Google OAuth **Config = سليم** (client/origin/redirect مطابقة — مثبت حيًا)، لكن **E2E معلّق** على OAuth Consent → External + Test user (خارج الكود) — راجع `GOOGLE-OAUTH-EXTERNAL-GATE.md`.
 
-### 5.7 المزامنة + PWA
-`syncState` (off/syncing/synced + أيقونة Cloud نابضة)؛ manifest RTL + `sw.js` (cache `nawah-v1`) + أيقونات iOS.
+### 5.7 المزامنة + PWA (تفاصيل تنفيذ فعلية)
+- **Manifest:** من `app/manifest.ts` (MetadataRoute → `/manifest.webmanifest`) — `lang:"ar"`, `dir:"rtl"`, `display:"standalone"`, `theme_color #6366f1`, أيقونات 192/512 (maskable)، بلا Workbox (SW مكتوب يدويًا).
+- **Service Worker:** `public/sw.js` — كاش `nawah-v1`؛ precache: `/`, أيقونات 192/512, `/manifest.webmanifest`.
+  - **شبكة أولًا** لصفحة HTML (`mode==="navigate"` أو `/`) مع سقوط إلى الكاش عند عدم الاتصال.
+  - **كاش أولًا** للأصول الثابتة `/_next/static/` و`/icons/`.
+  - **تجاهل صارم**: كل `/api/*`, `/auth/*`, وأي طلب غير GET — لا نكاش لبيانات المستخدم.
+  - `skipWaiting` + `clients.claim` + تنظيف الكاشات القديمة في `activate`.
+- **iOS:** `apple-mobile-web-app-capable` + `statusBarStyle: black-translucent` + `apple-touch-icon` (`/icons/icon-180.png`).
+- **المزامنة:** `syncState` (off/syncing/synced) + أيقونة Cloud نابضة؛ LocalStore (`localStorage`: `nawah:convs`, `nawah:settings`) للجهاز، وNeon (`lib/storage-neon.ts` → جدول `nahwa_sync`) للمستخدم المسجَّل عبر `/api/conversations`.
 
 ### 5.8 ملء الشاشة (زر فقط — بلا اختصار، قرار المالك §6)
 `requestFullscreen` بعد mount (تفادي hydration)؛ `fullscreenchange` → `isFullscreen` + `data-fs`؛ زر يظهر فقط إن مدعوم.
@@ -163,7 +171,7 @@
 
 > **مبدأ:** لا واجهة بلا عقد. يُعتمد الـ Backend Contract **أولًا** في CR مستقل، ثم تُبنى الواجهة عليه. (لا Public Share هنا — خارج النطاق حتى تحديد نموذج الصلاحيات.)
 
-### Backend Contract (يُحبَّر ويُعتمد في CR-006)
+### Backend Contract (يُحرَّر ويُعتمد في CR-006)
 | البند | المواصفة المقترحة (قابلة للنقض في CR) | قيد |
 |---|---|---|
 | Endpoint | `POST /api/conversation-intel` (جديد) — أو داخل `/api/chat` كإشارة؛ يُحدَّد في CR | لا تنفيذ قبل الاعتماد |
@@ -220,6 +228,7 @@ tests/                  ← 163 وحدة/تكامل + 19 E2E (2 specs)
 | **E-004** | CI | تشغيل GitHub Actions أخضر | `gh run list --branch main` (مثل d8d0d9e success) |
 | **E-005** | PRODUCTION | تحقق حي على Vercel | 200 + `/api/status` + علامات في الحزم (verify-item5-live.mjs 4/4، verify-item3 7/7…) |
 | **E-006** | USER-ACCEPTANCE | تحقق يدوي من المالك | سيناريوهات: Google OAuth E2E، المايك، حفظ PDF، ملء الشاشة على OS حقيقي |
+| **E-007** | MERGE-EVIDENCE | طلب سحب مدمج في main بموافقة بشرية | PR #3 (`51a6519`) + PR #2 (`8918512`) + PR #4 — كلها CI ✓ |
 
 ### أمثلة تطبيق (Base الشفافية)
 ```text
@@ -228,6 +237,8 @@ Google OAuth E2E      PENDING  [E-006]        ← خارج الكود (Consent E
 GitHub OAuth          OPTIONAL [E-001]        ← بلا env منشورة
 الصور 5.2             DEFERRED [عائق خارجي: HF بلا مزود صور]
 Item 6                NOT STARTED (لا Evidence)
+FRONTEND-SPEC v1.0    APPROVED [E-001..E-005, E-007 (PR #3 51a6519)]
+FRONTEND-SPEC v1.1    APPROVED [E-001 (8918512), E-002..E-007 (PR #4)]  ← الحالي
 ```
 
 ### قواعد الفهرس
@@ -237,5 +248,71 @@ Item 6                NOT STARTED (لا Evidence)
 4. عند تجدد أي Evidence: يُحدَّث السطر + فهرس `tests/` الجولة + DEVELOPMENT-STATE في نفس الدورة.
 5. لا يُشطب سجل Evidence سابق — يُستبدل الحالة ويُترك المرجع (سجل تاريخي، كما في BASELINE_REGISTRY).
 
+## 14) المكدس التقني (من `package.json` — مرجع حي)
+
+| المجال | التقنية | النسخة (package.json) |
+|---|---|---|
+| الإطار | Next.js (App Router) | `^15.3.0` |
+| اللغة | TypeScript | `^5.7.0` |
+| مكتبة الواجهة | React / React DOM | `^19.0.0` |
+| الأنماط | Tailwind CSS + `@tailwindcss/postcss` | `^4.0.0` |
+| الأيقونات | lucide-react | `^0.460.0` |
+| المصادقة | next-auth (Auth.js v5) | `^5.0.0-beta.32` |
+| قاعدة البيانات | @neondatabase/serverless + drizzle-orm | `^1.1.0` / `^0.45.2` |
+| التحقق | zod (**v4**) | `^4.5.4` |
+| ماركداون | react-markdown + remark-gfm + rehype-highlight | `^9.0.1` / `^4.0.0` / `^7.0.1` |
+| تلوين الكود | highlight.js | `^11.11.1` |
+| استخراج الملفات | pdf-parse + mammoth (+ jszip/pdfkit dev) | `^2.4.5` / `^1.12.2` |
+| состояние/استعلام | zustand + @tanstack/react-query | `^5.0.15` / `^5.102.8` |
+| اختبار الوحدات | node:test (مدمج) + tsx | `^4.23.13` |
+| اختبار المتصفح | @playwright/test (**DEV ONLY**) | `^1.62.1` |
+| PWA | بلا مكتبة — SW يدوي (`public/sw.js`) + manifest عبر `app/manifest.ts` | — |
+
+## 15) المعمارية وتدفق البيانات (Data Flow)
+
+```text
+[UI] Composer (نص/ملفات/إملاء) — app/page.tsx
+   │  sendMessage() → validate → summary (5.4) → run()
+   ▼
+[API] app/api/chat/route.ts
+   │  parseChatBody (lib/validation.ts, zod v4) → rate-limit (20/دقيقة/IP)
+   │  → بناء السياق (history + files نصًا مستخرجًا + system)
+   ▼
+[AI] lib/ai/index.ts → resolveProvider(modelId, overrideKey)
+   │    fallback chain: gemini/groq/huggingface → demo (بلا مفتاح → demo حتمي)
+   │    lib/ai/providers/{gemini,groq,huggingface,search,demo}.ts
+   │    lib/ai/sse.ts → تحويل التدفق إلى SSE (أسطر `data:` / `done`)
+   ▼
+[Stream] SSE → الواجهة (type-cursor + providerUsed → شريط demo)
+```
+
+**التخزين (محوران):**
+- **محلي — LocalStorage** (وليس IndexedDB): `lib/storage.ts` (LocalStore) مفاتيح `nawah:convs` و`nawah:settings` — يعمل فورًا بلا حساب.
+- **سحابي — Neon**: `lib/storage-neon.ts` (جدول `nahwa_sync`، مفتاح `device_id`) عبر `/api/conversations` (مزامنة 60/دقيقة) — للمستخدم المسجَّل فقط؛ `SyncPayload { v:1, conversations, settings }`.
+
+**المصادقة:** AuthModal → `next-auth` (Credentials scrypt في `lib/auth-db.ts` + OAuth Google/GitHub إن وُجد env) → provisioning في `jwt` callback (`lib/identity.ts` → `ensureApplicationUser`) → `session.user.id` تطبيقي (INVARIANT-01: لا جلسة بلا مستخدم تطبيقي).
+
+**الواجهة/الخادم:** كل الطلبات عبر `/api/*` (chat, status, models, conversations, image, auth) — لا استدعاء مباشر من العميل لأي مزود.
+
+## 16) متغيرات البيئة وأثرها على الواجهة (Feature Flags)
+
+المصدر: `.env.example` + `lib/keys.ts` + `lib/auth.ts` — **لا تُنشر أي قيمة**، فقط الأسماء والأثر.
+
+| المتغير | الأثر على الواجهة | إلزامي؟ |
+|---|---|---|
+| `AUTH_SECRET` | يفعّل نظام الحسابات (مع `AUTH_URL`/`AUTH_TRUST_HOST`) ويُظهر زر الدخول | إلزامي للمصادقة (بلا جلسات OAuth) |
+| `AUTH_GOOGLE_ID` + `AUTH_GOOGLE_SECRET` | يُظهر زر «المتابعة بحساب Google» في AuthModal | اختياري (يشترط Consent External + Test user — معلّق [E-006]) |
+| `AUTH_GITHUB_ID` + `AUTH_GITHUB_SECRET` | يُظهر زر GitHub في AuthModal | اختياري (غير منشور حاليًا → OPTIONAL) |
+| `GEMINI_API_KEY` / `GROQ_API_KEY` / `HF_TOKEN` | يُفعّل المزود في ModelPicker (بلا المفتاح → demo حتمي) | اختياري (واحدة تكفي للتشغيل) |
+| `TAVILY_API_KEY` | يُفعّل البحث في الويب (مزود `search`) | اختياري |
+| `DATABASE_URL` | يفعّل المزامنة السحابية (Neon) والمصادقة البرنامجية | اختياري (بدونه: محلي فقط) |
+| `MAX_TOKENS` | سقف رموز الرد (افتراضي 1024) | اختياري |
+| `RATE_LIMIT_PER_MIN` / `RATE_LIMIT_SYNC_PER_MIN` | حدود chat/sync (افتراضي 20/60) | اختياري (يعمل تلقائيًا بلا إعداد) |
+| `RATE_LIMIT_DISABLED` | `1` = تعطيل الحماية — **للاختبارات المحلية فقط** | لا (في بيئة الاختبار وwebServer فقط) |
+| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | تقييد موزّع عبر خوادم Vercel (اختياري) | اختياري |
+
+> **قاعدة:** أي زر يظهر/يختفي بناءً على هذه المتغيرات يُوثَّق هنا — لا سلوك «يظهر صدفة».
+
 ---
-> **ملاحظة الحوكمة:** اعتماد هذا المستند كـ Frontend Source of Truth يتم عبر **PR (مستقل عن PR #2)** — مراجعة ثم دمج بموافقة بشرية. أي خلاف مع الكود المستقبلي يُحل بتحديث المستند في نفس الـPR الذي يغيّر الكود (لا مستند منفصل عن الواقع).
+
+> **ملاحظة الحوكمة:** أي خلاف مستقبلي بين الكود وهذا المستند يُحل بتحديث المستند في نفس الـPR الذي يغيّر الكود (لا مستند منفصل عن الواقع). تحديث v1.1 عبر PR #4 (توثيق فقط).
