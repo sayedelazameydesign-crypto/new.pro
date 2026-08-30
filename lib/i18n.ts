@@ -17,6 +17,8 @@ const dict: Record<Lang, Record<string, string>> = {
     delete: "حذف",
 
     settings: "الإعدادات",
+    fullscreen: "ملء الشاشة", // CR-005
+    fullscreenExit: "الخروج من ملء الشاشة", // CR-005
     model: "الموديل",
     systemPrompt: "تعليمات النظام (System Prompt)",
     systemPromptHint: "مثال: أنت مساعد برمجي متخصص تكتب إجابات مختصرة بالعربية.",
@@ -42,11 +44,13 @@ const dict: Record<Lang, Record<string, string>> = {
     license: "الترخيص",
 
     composerPlaceholder: "اكتب رسالتك هنا…",
-    composerHint: "Enter للإرسال · Shift+Enter لسطر جديد",
+    composerHint: "Enter للإرسال · Shift+Enter لسطر جديد · Ctrl+Enter إرسال", // CR-005
+    composerAria: "صندوق الإدخال — يمكن سحب الملفات إليه",
     attach: "إرفاق ملف (TXT, MD, CSV, JSON, PDF, DOCX)",
     removeFile: "إزالة المرفق",
     fileTooBig: "الملف أكبر من 1 ميجابايت",
     fileMax: "حد أقصى 3 ملفات في الرسالة",
+    fileUnsupported: "صيغة الملف غير مدعومة — المتاح: TXT, MD, CSV, JSON, PDF, DOCX", // CR-005
     imageGenerate: "توليد صورة (FLUX — مجاني)",
     dictation: "إملاء صوتي (Web Speech API)",
     dictationStop: "إيقاف الإملاء",
@@ -148,6 +152,8 @@ const dict: Record<Lang, Record<string, string>> = {
     delete: "Delete",
 
     settings: "Settings",
+    fullscreen: "Fullscreen", // CR-005
+    fullscreenExit: "Exit fullscreen", // CR-005
     model: "Model",
     systemPrompt: "System Prompt",
     systemPromptHint: "Example: You are a senior coding assistant. Answer concisely.",
@@ -173,11 +179,13 @@ const dict: Record<Lang, Record<string, string>> = {
     license: "License",
 
     composerPlaceholder: "Type your message…",
-    composerHint: "Enter to send · Shift+Enter for new line",
+    composerHint: "Enter to send · Shift+Enter for new line · Ctrl+Enter sends", // CR-005
+    composerAria: "Message composer — you can drag files here",
     attach: "Attach file (TXT, MD, CSV, JSON, PDF, DOCX)",
     removeFile: "Remove attachment",
     fileTooBig: "File exceeds 1 MB",
     fileMax: "Maximum 3 files per message",
+    fileUnsupported: "Unsupported file type — allowed: TXT, MD, CSV, JSON, PDF, DOCX", // CR-005
     imageGenerate: "Generate image (FLUX — free)",
     dictation: "Voice dictation (Web Speech API)",
     dictationStop: "Stop dictation",

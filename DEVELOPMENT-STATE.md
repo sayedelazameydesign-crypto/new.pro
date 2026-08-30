@@ -4,9 +4,9 @@
 
 ```text
 BASELINE            auth-baseline -> 289c7f5   (AUTH HARDENED / FINAL — محمي، غير قابل للإزاحة)
-CURRENT_CHECKPOINT  هذا الـcommit — المرحلة 6/Item 4: E2E Playwright (إرسال/حذف/إعدادات)
-                   (playwright.config.ts + tests/e2e/core-flows.spec.ts 15/15 + CI خطوة E2E)
-                   HEAD السابق a63011f (Item 3) — Item 4 مغلق بالكامل
+CURRENT_CHECKPOINT  cr/item-5-improvements — المرحلة 6/Item 5: CR-005 (اختصار Ctrl/⌘+Enter
+                   + سحب ملفات للإدخال + ملء شاشة كزر UI) — 163/163 Unit + 19/19 E2E
+                   فوق 38d9bb3 (Item 4) — بانتظار PR + موافقة بشرية للدمج (حوكمة CR)
 
 STATUS_MATRIX
   - 5.1 = PASS            (قراءة ملفات — مثبتة حيًا)
@@ -27,6 +27,9 @@ COMPLETED
   - التذكّر (5.4): lib/summary.ts — عتبة 24 رسالة → ملخص عربي → Conversation.summary
     (يُزامن عبر Neon) → يُحقن في system → يصل فعليًا للمزودات (كان خللًا كامنًا أُصلح)
   - المرحلة 6/1 — PWA: manifest RTL + sw.js (nawah-v1) + أيقونات RGBA + تسجيل SW + وسوم iOS
+  - Item 5 (المرحلة 6): CR-005 — Ctrl/⌘+Enter إرسال (الاختصار المعتمد الوحيد) + سحب ملفات
+    للإدخال (مسار موحّد بنفس قواعد الاختيار + allowlist إجباري قبل FileReader) + ملء شاشة
+    (زر UI عبر Fullscreen API + fullscreenchange + data-fs) — 0 dependencies جديدة
   - Item 4 (المرحلة 6): E2E Playwright — 15 اختبارًا (إرسال/عربي/Enter/فارغ/تحميل/إنشاء/
     حذف نشطة وغير نشطة/إلغاء/إعدادات/استمرارية/refresh/عزل سياقات) — DEV ONLY،
     بلا LLM خارجي (وضع demo)، بلا أسرار، webServer منفصل 3100 + CI خطوات E2E
