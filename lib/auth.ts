@@ -7,6 +7,7 @@ import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import { findUserByEmail, verifyPassword } from "./auth-db";
+import { ensureApplicationUser } from "./identity";
 import { checkRateLimit, getClientIp } from "./rate-limit";
 
 /** هل المصادقة جاهزة؟ (يتطلب AUTH_SECRET + قاعدة البيانات) */
@@ -53,8 +54,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       : []),
   ],
   callbacks: {
-    async jwt({ token, user }) {
-      if (user?.id) token.id = user.id;
+    // Provisioning إلزامي داخل دورة توقيع الجلسة نفسها (وليس side effect):
+    // OAuth identity → canonical application user → session.user.id
+    async jwt({ token, user, account }) {
+      try {
+        if (account && account.provider !== "credentials") {
+          const pid = String(account.providerAccountId ?? "").trim();
+          if (!pid) throw new Error("IDENTITY_INVALID: providerAccountId مفقود");
+          const res = await ensureApplicationUser({
+            provider: account.provider as "google" | "github",
+            providerAccountId: pid,
+            email: user?.email ?? undefined,
+            name: user?.name ?? undefined,
+            image: user?.image ?? undefined,
+          });
+          token.id = res.userId; // canonical application user ID (ليس معرّف المزود)
+        } else if (user?.id) {
+          token.id = user.id; // credentials: id مصدره nahwa_users أصلًا
+        }
+      } catch (err) {
+        // لا جلسة بلا مستخدم تطبيقي (INVARIANT-01) — نرفض التوقيع
+        console.warn("[nawah][identity][error]", err instanceof Error ? err.message.slice(0, 160) : "unknown");
+        throw err;
+      }
       return token;
     },
     async session({ session, token }) {

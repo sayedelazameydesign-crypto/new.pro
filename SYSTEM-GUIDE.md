@@ -97,6 +97,7 @@
 
 | الملف | المهمة |
 |---|---|
+| `lib/identity.ts` | **طبقة هوية التطبيق** (4.3): `ensureApplicationUser()` — مصادقة OAuth → canonical application user، ذرّية + idempotent + بلا حالة جزئية، عبر `IdentityStore` (Neon حقيقي أو وهمي للاختبار) |
 | `index.ts` | **العقل المدبر:** ينفّذ «سياسة حل المزودات» (4.1): `resolveProvider(modelId, overrideKey?)` + `streamReply()` + `sanitizeError()` (تعقيم إجباري) + تدقيق داخلي `[nawah][provider-fallback]` |
 | `providers/gemini.ts` | Gemini 2.5 Flash/Pro + 2.0 Flash (بث) |
 | `providers/groq.ts` | Groq: `openai/gpt-oss-120b` / `openai/gpt-oss-20b` (بث سريع) |
@@ -111,7 +112,7 @@
 |---|---|
 | `lib/models.ts` | تعريف `ProviderKind` + قائمة النماذج (معرّف `provider:model`) + `splitModelId/getModel` |
 | `lib/auth.ts` | إعداد Auth.js v5: مزود Credentials + Google + GitHub (مشروط) + `authEnabled()` + `socialProviders()` |
-| `lib/auth-db.ts` | جدول `nahwa_users` (إنشاء تلقائي) + تسجيل/تحقق (scrypt + `timingSafeEqual`) |
+| `lib/auth-db.ts` | جداول `nahwa_users` + `nahwa_auth_identities` (إنشاء تلقائي) + تسجيل/تحقق (scrypt + `timingSafeEqual`) |
 | `lib/rate-limit.ts` | حدود: محادثة 20/دقيقة، مزامنة 60/دقيقة؛ مصدر `memory` (يعمل فورًا) أو `upstash` (مشترك) أو `disabled` للاختبارات |
 | `lib/storage-neon.ts` | القراءة/الكتابة/الحذف في `nahwa_sync` (Postgres) |
 | `lib/storage.ts` | التخزين المحلي (LocalStore) — يعمل دائمًا بلا حساب |
@@ -163,6 +164,32 @@ client apiKey
 
 > **الإثبات في الكود:** `sanitizeError(err, resolved.apiKey, outKey)` في `app/api/chat/route.ts` + `console.warn("[nawah][provider-error]", {provider, reason: معقّم})` + استبعاد المحارف التحكمية (منع حقن الترويسات). الاقتطاع (300 حرف) إجراء أمان إضافي — وليس بديلًا عن عدم التسجيل/التسريب.
 
+### 4.3) طبقة هوية التطبيق — `Application Identity Registry` 🔐
+
+**المشكلة التي تغلقها:** المصادقة عبر OAuth ≠ إنشاء مستخدم التطبيق. كانت الجلسة ممكنة دون أي صف في `nahwa_users` — وهذا الخلل صار مستحيلًا.
+
+```
+OAuth Provider
+   ↓ provider + providerAccountId
+nahwa_auth_identities   (UNIQUE(provider, provider_account_id))
+   ↓ user_id
+nahwa_users.id          (canonical application user)
+   ↓ session.user.id
+syncScope = user:<canonicalUserId>
+```
+
+| القاعدة | التنفيذ |
+|---|---|
+| **Provisioning إلزامي** | داخل `callbacks.jwt` (قبل توقيع الجلسة) — فشل Provisioning = لا جلسة (INVARIANT-01) |
+| **المفتاح الأساسي للهوية** | `(provider, providerAccountId)` — وليس البريد؛ البريد وسيلة ربط موثقة فقط |
+| **سياسة الربط (verified-email)** | مزود OAuth أثبت ملكية البريد → يُسمح بربطه بمستخدم قائم بنفس البريد (لا إنشاء مكرر) |
+| **Idempotency** | نفس الهوية N مرة → نفس المستخدم دائمًا؛ `ON CONFLICT DO NOTHING` + UNIQUE في قاعدة البيانات |
+| **لا حالة جزئية** | فشل الربط بعد الإنشاء → تراجع (undo) عن المستخدم الجديد |
+| **لا اعتمادات في سجل المستخدم** | لا تُخزَّن أبدًا توكنات/أسرار/أكواد المزودين (INVARIANT-03) |
+| **قابلية الاختبار** | `IdentityStore` (Port/Adapter): يُختبر بهوية اصطناعية 100% دون أي حساب بشري — CI لا يعتمد على موافقة Google |
+
+**الاختبارات:** `tests/identity.test.ts` → 12 اختبارًا (إنشاء/إعادة استخدام/ربط/فشل/نطاق/لا تكرار/لا تسريب) كلها PASS. **الجدول:** `nahwa_auth_identities` (يُنشأ تلقائيًا مع `nahwa_users`).
+
 ---
 
 ## 5) المهام الوظيفية الرئيسية
@@ -172,8 +199,8 @@ client apiKey
 | 1 | **محادثة ذكية عربية** | `POST /api/chat` → بث SSE؛ يدعم Markdown + تظليل كود | ✅ تعمل |
 | 2 | **تراجع تلقائي** | يحاول النظام تزويد الرد عبر fallback إلى `demo` عند فشل المزود أو غياب المفتاح، ضمن نطاق الأخطاء المدعومة (وفق سياسة 4.1) | ✅ تعمل |
 | 3 | **4 مزودات + بحث** | Gemini · Groq · HuggingFace · Tavily(بحث بمصادر) · demo | ✅ **كلها مفعّلة حيًا** `{gemini,hf,groq,search:true}` |
-| 4 | **حسابات وأجهزة** | Auth.js v5؛ دخول بريد/كلمة مرور + Google (مفعّل حيًا) + GitHub (اختياري)؛ مزامنة عبر `user:<id>` | ✅ بريد/كلمة مرور + Google OAuth؛ GitHub بانتظار مفاتيحك |
-| 5 | **مزامنة عبر الأجهزة** | `nahwa_sync` في Neon؛ الزائر → `device:<id>`، المسجّل → `user:<id>` | ✅ مثبتة (جهازان قرآ نفس المحادثة) |
+| 4 | **حسابات وأجهزة** | Auth.js v5؛ دخول بريد/كلمة مرور + Google (مفعّل حيًا) + GitHub (اختياري)؛ مزامنة عبر `user:<id>` + **Provisioning إلزامي لكل طرق الدخول** | ✅ بريد/كلمة مرور + Google OAuth + طبقة هوية (4.3)؛ GitHub بانتظار مفاتيحك |
+| 5 | **مزامنة عبر الأجهزة** | `nahwa_sync` في Neon؛ الزائر → `device:<id>`، المسجّل → `user:<canonicalUserId>` | ✅ مثبتة (جهازان قرآ نفس المحادثة) |
 | 6 | **حماية الحدود** | 20 رسالة/دقيقة + 60 مزامنة/دقيقة، `429` + ترويسات `X-RateLimit-*`؛ Upstash اختياري لمشاركة الحدود | ✅ `memory` فعّال (Upstash اختياري) |
 | 7 | **لوحة مفاتيح BYOK** | من ⚙️ الإعدادات: أي زائر يلصق مفتاحه في المتصفح → تفعيل فوري دون لمس Vercel | ✅ مثبتة حيًا |
 | 8 | **واجهة RTL مصقولة** | عربية بالكامل + داكن + اقتراحات + اختيار نماذج | ✅ تعمل |
@@ -292,7 +319,7 @@ nahwa_users(
 ```
 npm run typecheck   → tsc --noEmit
 npm run build       → next build
-npm test            → 24/24 اختبارًا (API، بث، تراجع، حماية، مزامنة، BYOK، بحث، حالة)
+npm test            → 37/37 (25 API + 12 هوية: إنشاء/إعادة استخدام/ربط/فشل/نطاق/لا تكرار/لا تسريب)
 npm run check:keys  → تشخيص المزودات
 ```
 
@@ -338,30 +365,25 @@ git push origin main → GitHub (CI: يبني ويختبر) → Vercel (نشر �
 
 ## 15) الحالة الراهنة — `RELEASE STATUS` (2026-08-29)
 
+### بوابات المصادقة والهوية (AUTH Gates)
+
 ```
-NAWAH AI — RELEASE STATUS
+AUTH-1  OAuth Authorization Contract        PASS   ← يعمل إلى Google ببياناتنا (متصفح حقيقي)
+AUTH-2  OAuth Callback Contract             PASS   ← مسار callback حي + تبادل كود مقبول (invalid_grant)
+AUTH-3  Application Provisioning            PASS   ← ensureApplicationUser() إلزامي في دورة الجلسة (12 اختبارًا)
+AUTH-4  Identity Idempotency                PASS   ← نفس الهوية N مرة → مستخدم واحد (UNIQUE + اختبارات)
+AUTH-5  Canonical Session Identity          PASS   ← session.user.id = nahwa_users.id (ليس معرّف المزود)
+AUTH-6  Sync Scope                          PASS   ← scope = user:<canonicalUserId> فقط
+AUTH-7  Real Google Browser E2E (موافقة)   MANUAL / PENDING ← يتطلب موافقة بشرية بحساب Google
+```
+
+### بوابات المنصة
+
+```
+Core Chat / SSE / Demo / Gemini / Groq / HuggingFace / Web Search / BYOK / LocalStore
+Neon Sync / Credentials Auth / Rate Limit / CI / Secrets Hygiene / Deploy / Docs = PASS
 ────────────────────────────────────────
-Core Chat                  PASS
-SSE Streaming              PASS
-Demo Provider              PASS
-Gemini                     PASS
-Groq                       PASS
-HuggingFace                PASS
-Web Search / Tavily        PASS
-BYOK                       PASS
-LocalStore                 PASS
-Neon Sync                  PASS
-Credentials Auth           PASS
-Google OAuth Config        PASS   ← الإعداد مُثبت (المزود ظاهر + السر مقبول من Google)
-Google OAuth E2E           PENDING USER TEST   ← يتطلب تسجيل دخول حقيقي من المتصفح
-GitHub OAuth               OPTIONAL / NOT CONFIGURED
-Rate Limit                 PASS
-CI                         PASS
-Secrets Hygiene            PASS
-Production Deployment      PASS
-Documentation              PASS
-────────────────────────────────────────
-OVERALL                   READY / E2E AUTH PENDING
+OVERALL: READY (REAL_EXTERNAL_OAUTH_E2E = CONDITIONAL / MANUAL)
 ```
 
 **الفرق الجوهري في الصياغة (يُحترم دائمًا):**
@@ -371,11 +393,9 @@ OVERALL                   READY / E2E AUTH PENDING
 | **Configuration PASS** | المزود مفعّل + بيان Google «invalid_grant» (عميل/سر/redirect مقبولة) + التدفق يصل accounts.google.com | لا يثبت callback → upsert → جلسة |
 | **E2E PASS** | تسجيل دخول حقيقي من متصفح → callback → جلسة → حساب في `nahwa_users` → مزامنة `user:<id>` | — (يُعلن فقط بعد الاختبار الفعلي) |
 
-**متبقٍ للتحويل:**
-- `Google OAuth E2E` → **PASS** بعد نجاح تسجيل الدخول من المتصفح (خطوة بيد المستخدم — تتطلب حساب Google).
-- `GitHub OAuth` → اختياري: `AUTH_GITHUB_ID/SECRET` ثم إثبات بنفس النمط.
-- `Upstash` → اختياري: `UPSTASH_REDIS_REST_URL/TOKEN` (حماية مشتركة متعددة الخوادم).
-- الاختبارات: 24/24 · CI: success · المستودع نظيف بلا أسرار (فحص كامل تاريخ Git).
+**العلاقة بين المرحلتين بعد شريحة الهوية:** «Provisioning» لم يعد يعتمد على موافقة بشرية — يُثبت آليًا بـ `ensureApplicationUser()` (AUTH-3/4/5/6 = PASS عبر Synthetic Identity Harness). بقي `AUTH-7` وحده وهو خارجي بطبيعته (يتطلب حساب Google حقيقي) — لا يعطّل النظام ولا CI.
+
+> ⚠️ **ضمان مهم:** لا توجد جلسة بدون مستخدم تطبيقي (الـ callback يُنشئه أو يسترجع قبل توقيع الجلسة) — أقوى من مجرد `events.signIn` كـ side effect.
 
 ---
 

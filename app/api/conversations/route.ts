@@ -21,7 +21,11 @@ const DEVICE_RE = /^[a-zA-Z0-9-]{8,80}$/;
 
 const syncEnabled = () => !!process.env.DATABASE_URL;
 
-/** تحديد نطاق المزامنة: الحساب (userId) إن وُجد، وإلا الجهاز (deviceId) */
+/** تحديد نطاق المزامنة: الحساب (userId) إن وُجد، وإلا الجهاز (deviceId)
+ *  عقد الهوية: session.user.id هو دائمًا canonical application user ID
+ *  (من nahwa_users عبر طبقة الهوية) — لا يُشتق النطاق أبدًا من معرّف مزود
+ *  خارجي (Google sub / GitHub id) مباشرةً، حتى تظل المزامنة مستقلة عن
+ *  المزود الاجتماعي. */
 async function resolveScope(req: NextRequest, bodyDeviceId?: string): Promise<
   { scope: string; account: boolean } | { error: Response }
 > {

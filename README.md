@@ -9,7 +9,7 @@
 
 `Next.js 15 (App Router)` · `Gemini API` · `Hugging Face` · `Vercel` · `TypeScript` · `Tailwind v4`
 
-[![CI — فحص النواة](https://github.com/sayedelazameydesign-crypto/new.pro/actions/workflows/ci.yml/badge.svg)](https://github.com/sayedelazameydesign-crypto/new.pro/actions) · 24/24 اختبارات ✅
+[![CI — فحص النواة](https://github.com/sayedelazameydesign-crypto/new.pro/actions/workflows/ci.yml/badge.svg)](https://github.com/sayedelazameydesign-crypto/new.pro/actions) · 37/37 اختبارات ✅
 
 [واجهة عربية/إنجليزية RTL/LTR] · [بث مباشر (Streaming)] · [مفاتيح مجانية فقط] · [قابلة للتوسع دون هدم المعمارية]
 
@@ -79,6 +79,7 @@ npm run dev
 | **الدخول** | بريد + كلمة مرور (تُجزّأ بـ scrypt وتُخزَّن في Neon) — يعمل فورًا |
 | **الدخول بـ Google** | ✅ **مفعّل حيًا** — `AUTH_GOOGLE_ID` + `AUTH_GOOGLE_SECRET` في Vercel، والزر يبدأ التدفق الصحيح (مُثبت: `/api/auth/signin/google` → `accounts.google.com` ببياناتنا) |
 | **الدخول بـ GitHub** | ⏳ اختياري — أضف `AUTH_GITHUB_ID` + `AUTH_GITHUB_SECRET` (GitHub → Settings → Developer settings → OAuth Apps) فيظهر الزر تلقائيًا |
+| **Provisioning إلزامي** | ✅ `ensureApplicationUser()` في دورة الجلسة: أي دخول (OAuth أو بريد) يضمن مستخدمًا تطبيقيًا canonical في `nahwa_users` + ربط هوية في `nahwa_auth_identities` — لا جلسة بلا مستخدم (12 اختبارًا للهوية) |
 | **الترقية الذكية** | مستخدم مسجّل → المزامنة عبر `userId`؛ زائر غير مسجّل → تبقى عبر `deviceId` (سلوك سابق سليم) |
 | **الحماية** | 10 محاولات دخول/دقيقة/IP + تسجيل 10/دقيقة/IP |
 

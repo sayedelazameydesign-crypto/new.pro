@@ -207,3 +207,39 @@ POST /api/chat modelId=search:web:
 
 ## المتبقي (اختبار قبول نهائي — يتطلب حساب Google في متصفح المستخدم)
 زر «المتابعة عبر Google» → تسجيل الدخول → `/api/auth/callback/google` → جلسة → صف في `nahwa_users` → مزامنة عبر `user:<id>`.
+
+---
+
+# 🧪 تقرير الاختبار — الجولة الثامنة (AUTH IDENTITY HARDENING)
+
+> **التاريخ:** 2026-08-29 · **النتيجة:** ✅ **37/37** (25 سابقة + 12 جديدة للهوية) · CI success
+
+## المنجز في الشريحة (النطاق: auth/provisioning فقط)
+- `lib/identity.ts` — `ensureApplicationUser()`: المصادقة OAuth → **canonical application user** (ذرّية + idempotent + بلا حالة جزئية) عبر `IdentityStore` (Port/Adapter).
+- `lib/auth-db.ts` — إنشاء `nahwa_auth_identities` تلقائيًا (UNIQUE(provider, provider_account_id) + FK) + عمود `image`.
+- `lib/auth.ts` — Provisioning **إلزامي داخل `callbacks.jwt`** قبل توقيع الجلسة (فشل = لا جلسة)؛ `session.user.id` = canonical.
+- `app/api/conversations` — توثيق عقد النطاق: `user:<canonicalUserId>` فقط (لا معرّف مزود).
+- `db/schema.sql` — المخطط الرسمي للجدولين.
+- `tests/identity.test.ts` — 12 اختبارًا بهوية **اصطناعية** (لا حاجة لأي حساب بشري).
+
+## الاختبارات الجديدة (Synthetic OAuth Harness — بلا Google حقيقي)
+| # | العقد | النتيجة |
+|---|---|---|
+| 1 | هوية Google جديدة → مستخدم واحد | ✅ |
+| 2 | نفس الهوية مرتين → نفس المستخدم | ✅ |
+| 3 | نفس الهوية × 5 → مستخدم واحد | ✅ |
+| 4 | هوية GitHub جديدة → مستخدم واحد | ✅ |
+| 5 | ربط بريد موثق → نفس المستخدم (لا تكرار) | ✅ |
+| 6 | فشل الربط → تراجع (لا حالة جزئية) | ✅ |
+| 7 | الناتج دائمًا canonical nahwa_users.id | ✅ |
+| 8 | النطاق = user:<canonical> فقط | ✅ |
+| 9 | providerAccountId لا ينتج مكررين | ✅ |
+| 10 | لا تخزين أي اعتماد مزود في سجل المستخدم | ✅ |
+| 11 | Provisioning مستقل عن موافقة بشرية | ✅ |
+| 12 | تكرار الدخول بعد الجلسة → نفس المستخدم | ✅ |
+
+## الإثبات
+```
+typecheck ✅ · build ✅ · npm test = 37/37 ✅ (التوافق العكسي 25/25 سليم)
+key-policy (BYOK) لم تُمس · لا أسرار جديدة · لا تغيير خارج نطاق auth/provisioning
+```

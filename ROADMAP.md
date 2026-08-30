@@ -47,7 +47,9 @@
 - ✅ **ربط `userId` بجدول المزامنة** (أولوية تلقائية على deviceId — بلا كسر للزوار)
 - ✅ برهان حي: جهازان بنفس الحساب يريان نفس المحادثات
 - ✅ **Google OAuth مفعّل حيًا (2026-08-29)** — `AUTH_GOOGLE_ID/SECRET` في Vercel + التدفق مُثبت: `/api/auth/signin/google` → `accounts.google.com` ببياناتنا (client_id + redirect_uri مسجّلان)
+- ✅ **شريحة AUTH IDENTITY HARDENING (2026-08-29)** — `ensureApplicationUser()` + جدول `nahwa_auth_identities` (UNIQUE) + canonical `session.user.id` + Provisioning إلزامي في دورة الجلسة + 12 اختبارًا بهوية اصطناعية (بلا حساب بشري)
 - ⏳ (اختياري لاحقًا) GitHub OAuth — بانتظار `AUTH_GITHUB_ID/SECRET` + middleware
+- ⏳ (خارجي بطبيعته) Real Google Browser E2E — موافقة بشرية بحساب Google؛ ليس شرطًا لتشغيل CI أو النظام
 
 > 💡 نصيحة: **لا تؤجل الإطلاق للمرحلة 3** — الإطلاق بلا تسجيل أدخل وأسرع، والتسجيل يُضاف لاحقًا دون هدم.
 
