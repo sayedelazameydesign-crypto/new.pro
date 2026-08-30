@@ -25,8 +25,8 @@
 | Security Review | **Pass** | git grep بلا أسرار؛ لا بيانات حقيقية في الاختبارات؛ تعزيز allowlist قبل FileReader؛ لا auth/صلاحيات جديدة |
 | Contract Review | **Pass** | لا تغيير في `/api/*`، `lib/validation.ts`، `lib/share.ts`، `lib/export.ts` — النطاق UI/منطق نقي فقط |
 | Git Commit | **Pass** | commit واحد على الفرع (انظر السجل) |
-| Pull Request | **Pass** | `cr/item-5-improvements → main` — بانتظار موافقة بشرية (قاعدة الدمج) |
-| Final Approval | **Pending** | الموافقة البشرية على الدمج (بوابة البروتوكول) |
+| Pull Request | **Pass** | PR #1 — دُمج في `d8d0d9e` بعد موافقة المالك (2026-08-30) |
+| Final Approval | **Pass** | موافقة المالك الصريحة («التأكد من نشر أحدث الأكواد») — الدمج تم + CI success + تحقق حي 4/4 |
 
 ## الملفات والتغييرات
 
@@ -63,5 +63,7 @@
 
 - [x] جاهز للمراجعة.
 - [ ] يحتاج إصلاحًا إضافيًا.
-- [ ] متوقف بانتظار موافقة بشرية. **(للدمج فقط — بند واحد معلق: الموافقة على PR)**
+- [ ] متوقف بانتظار موافقة بشرية.
 - [ ] مرفوض.
+
+**قرار نهائي: COMPLETED — دُمج (`d8d0d9e`) · CI success · Vercel يُخدم Item 5 (4/4 علامات) · رابط: https://new-pro-kohl.vercel.app**

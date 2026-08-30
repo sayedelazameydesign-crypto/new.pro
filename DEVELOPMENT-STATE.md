@@ -4,9 +4,9 @@
 
 ```text
 BASELINE            auth-baseline -> 289c7f5   (AUTH HARDENED / FINAL — محمي، غير قابل للإزاحة)
-CURRENT_CHECKPOINT  cr/item-5-improvements — المرحلة 6/Item 5: CR-005 (اختصار Ctrl/⌘+Enter
-                   + سحب ملفات للإدخال + ملء شاشة كزر UI) — 163/163 Unit + 19/19 E2E
-                   فوق 38d9bb3 (Item 4) — بانتظار PR + موافقة بشرية للدمج (حوكمة CR)
+CURRENT_CHECKPOINT  main = d8d0d9e — المرحلة 6/Item 5: CR-005 مغلق بالكامل
+                   (2adab69 عبر PR #1) — 163/163 Unit + 19/19 E2E + CI success
+                   + Vercel حي بخدمة Item 5 (4/4 علامات) — HEAD السابق 38d9bb3 (Item 4)
 
 STATUS_MATRIX
   - 5.1 = PASS            (قراءة ملفات — مثبتة حيًا)
