@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --import tsx --test tests/api.test.mjs tests/identity.test.ts tests/identity-race.test.ts tests/file-extract.test.ts tests/image.test.ts tests/speech.test.ts tests/summary.test.ts tests/provider-system.test.ts tests/validation.test.ts tests/ui-store.test.ts tests/query-client.test.ts tests/streaming.test.ts tests/db-schema.test.ts",
+    "test": "node --import tsx --test tests/api.test.mjs tests/identity.test.ts tests/identity-race.test.ts tests/file-extract.test.ts tests/image.test.ts tests/speech.test.ts tests/summary.test.ts tests/provider-system.test.ts tests/validation.test.ts tests/ui-store.test.ts tests/query-client.test.ts tests/streaming.test.ts tests/db-schema.test.ts tests/export.test.ts",
     "typecheck": "tsc --noEmit",
     "check:keys": "node scripts/check-providers.mjs",
     "lint": "eslint .",

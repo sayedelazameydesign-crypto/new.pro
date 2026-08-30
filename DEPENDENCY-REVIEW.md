@@ -65,3 +65,27 @@
 - ✅ **مفتوح المصدر ومجاني** — كل الحزم OSS؛ لا ICD/مدفوعة.
 - ✅ **Vercel-compatible** — لا خادم Node مستقل؛ كل الحزم تعمل في دالة serverless (التحميلات الديناميكية هي الممارسة القياسية).
 - ✅ **GitHub-compatible** — CI الحالي (npm ci → typecheck → build → start → test) يعمل مع كل هذه الحزم.
+
+## 5) Item 2 (Read Mode + تصدير Markdown/PDF) — تحديث
+
+> **NO NEW DEPENDENCY — native/existing stack sufficient.**
+> لم تُضف أي حزمة لهذا البند، ولم تُحذف أي حزمة.
+
+| القرار | التفصيل |
+|---|---|
+| Markdown export | `lib/export.ts` جديد — Node/Blob أصلي (TextEncoder/Blob/URL.createObjectURL) — بلا مكتبة. |
+| PDF export | **طباعة المتصفح** (`window.print()` + `@media print` في globals.css) — انظر القرار P-1. |
+| Read Mode | `app/components/ReadMode.tsx` — يعيد استخدام `Markdown.tsx` (react-markdown/remark-gfm/rehype-highlight الموجودة أصلًا). |
+| أثر bundle | **صفر** — لا حزمة جديدة، لا إضافة إلى حزم العميل باستثناء الكود الجديد (بسيط). |
+| بديل Native | PDF: نعم (محرك طباعة المتصفح). Markdown: نعم (Blob أصلي). |
+
+### P-1: قرار PDF (الأقل خطورة والأقل اعتمادًا)
+- **الآلية المختارة:** حوار طباعة المتصفح (`window.print`) مع `@media print` يقتصر على `.print-area` ويخفي كل عناصر التحكم (`.no-print`).
+- **المبرر:**
+  1. دعم عربي/RTL كامل بجودة عالية عبر محرك النص الأصلي للمتصفح (بدون تضمين خطوط).
+  2. **صفر dependencies** — لا مكتبة PDF جديدة، ولا إعادة استخدام إنتاجية لـ pdfkit.
+  3. لا شبكة، لا خادم، يعمل Offline، ولا يغيّر Chat runtime.
+- **البدائل المدروسة والمرفوضة:**
+  - `pdfkit` (موجود أصلًا في dependencies لكنه **DEV ONLY** — توليد عينات للاختبارات فقط): استخدامه إنتاجيًا يتطلب تضمين خط عربي + معالجة تشكيل (shaping) — حجم/جودة/خطر دون مبرر. **مرفوض لهذا البند.**
+  - `jsPDF` (dependency جديدة + خط عربي مضمّن): مرفوض — نفس مبرر pdfkit مع إضافة اعتماد جديد.
+- **القيد الموثق:** المستخدم يحفظ الملف من حوار الطباعة (يختار «حفظ كـ PDF»)؛ لا يُنشأ ملف .pdf برمجيًا بدون مكتبة — هذا مقبول وموثق في`PHASE6-ITEM2-AUDIT.md`.

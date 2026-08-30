@@ -1,7 +1,7 @@
 # تقرير الاختبارات — نواة AI
 
-> آخر تحديث: جولة 15 (خطة EXECUTION — ربط Phase 1 الكامل + Final Gate)
-> النتيجة الكاملة: **124/124 ✅** — lint 0/0 · typecheck نظيف · build ✓ · تحقق حي 8/8
+> آخر تحديث: جولة 16 (Phase 6/Item 2 — وضع القراءة + تصدير Markdown/PDF)
+> النتيجة الكاملة: **136/136 ✅** — lint 0/0 · typecheck نظيف · build ✓ · تحقق حي 17/17
 
 ---
 
@@ -47,6 +47,29 @@ npm run typecheck # نظيف
 npm run build     # ✓ Compiled successfully (6/6 صفحات)
 npm test          # 120/120 ✅
 ```
+
+---
+
+## الجولة 16 — Phase 6/Item 2: وضع القراءة + تصدير Markdown/PDF
+
+| البند | النتيجة |
+|---|---|
+| Read Mode (دخول/خروج/عرض/بلا شبكة/بلا تغيير بيانات) | ✅ (حي 17/17) |
+| Markdown export (E-1..E-12) | ✅ 12/12 |
+| PDF export (طباعة المتصفح + CSS) | ✅ (حي) |
+| npm test (13+1 ملفات، خادم جديد) | ✅ **136/136** |
+| lint / typecheck / build | ✅ 0/0 · نظيف · ✓ |
+| تحقق حي (verify-item2.mjs — متصفح حقيقي) | ✅ **17/17** |
+| Security/Privacy Gate | ✅ (لا شبكة/لا تسجيل/لا أسرار في مسار التصدير) |
+| Dependency Review | ✅ **NO NEW DEPENDENCY** |
+
+### ما أُنجز
+- `lib/export.ts` (جديد): `conversationToMarkdown` (ترتيب + أدوار عربية + محتوى حرفي) · `sanitizeFileName`/`exportFileName` · `downloadMarkdown` (Blob محلي) · `printConversation` (window.print) — كلها بلا شبكة/أسرار.
+- `app/components/ReadMode.tsx` (جديد): يعيد استخدام `Markdown` الموجود؛ رأس بعنوان + أزرار Markdown/PDF/عودة؛ حاوية `print-area` للطباعة.
+- `app/page.tsx`: زر 📖 في الرأس (ظاهر عند محادثة نشطة) + استبدال منطقة الرسائل بصريًا + إخفاء الإدخال + خروج تلقائي عند تبديل المحادثة.
+- `app/globals.css`: `@media print` (فاتح/داكن واضح؛ يخفي `.no-print`؛ يبرز `.print-area`).
+- `lib/i18n.ts`: `readMode` (ar/en).
+- إصلاح: تأخير `a.remove()` في التنزيل لتسجيل اسم الملف.
 
 ---
 

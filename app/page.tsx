@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Bot,
+  BookOpen,
   Copy,
   Menu,
   Cloud,
@@ -24,6 +25,7 @@ import {
   X,
 } from "lucide-react";
 import Markdown from "./components/Markdown";
+import ReadMode from "./components/ReadMode";
 import Sidebar from "./components/Sidebar";
 import Welcome from "./components/Welcome";
 import ModelPicker from "./components/ModelPicker";
@@ -85,6 +87,7 @@ export default function Home() {
     providers: { github: false, google: false },
   });
   const [showAuth, setShowAuth] = useState(false);
+  const [readMode, setReadMode] = useState(false); // Item 2: وضع القراءة (يُصفَّر عند تبديل المحادثة)
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -565,6 +568,11 @@ export default function Home() {
 
   const showChat = !!active && active.messages.length > 0;
 
+  // Item 2: الخروج من وضع القراءة عند تبديل المحادثة
+  useEffect(() => {
+    setReadMode(false);
+  }, [activeId]);
+
   const sidebarEl = (
     <Sidebar
       conversations={conversations}
@@ -657,6 +665,16 @@ export default function Home() {
                   {t("authLogin")}
                 </button>
               ))}
+            {active && (
+              <button
+                onClick={() => setReadMode(true)}
+                className="p-2 rounded-xl hover:bg-[var(--bg)]"
+                title={t("readMode")}
+                aria-label={t("readMode")}
+              >
+                <BookOpen size={18} />
+              </button>
+            )}
             <button
               onClick={() => setShowSettings(true)}
               className="p-2 rounded-xl hover:bg-[var(--bg)]"
@@ -706,6 +724,9 @@ export default function Home() {
         >
           {!showChat ? (
             <Welcome t={t} onPick={sendMessage} onOpenSettings={() => setShowSettings(true)} />
+          ) : readMode ? (
+            /* Item 2: وضع القراءة — بلا شبكة، بلا تعديل بيانات */
+            <ReadMode title={active.title} messages={active.messages} onExit={() => setReadMode(false)} />
           ) : (
             <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
               {active.summary && (
@@ -803,7 +824,8 @@ export default function Home() {
           )}
         </div>
 
-        {/* اختيار الموديل — مكتب */}
+        {/* اختيار الموديل — مكتب (يُخفى في وضع القراءة) */}
+        {!readMode && (
         <div className="hidden md:block">
           <ModelPicker
             modelId={settings.modelId}
@@ -812,8 +834,10 @@ export default function Home() {
             onPick={(id) => setSettings((s) => ({ ...s, modelId: id }))}
           />
         </div>
+        )}
 
-        {/* صندوق الإدخال */}
+        {/* صندوق الإدخال (يُخفى في وضع القراءة) */}
+        {!readMode && (
         <div className="px-4 pb-4 pt-2 shrink-0">
           <div className="max-w-3xl mx-auto">
             <div className="flex items-end gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-xl shadow-black/5 focus-within:border-indigo-500 transition-colors">
@@ -924,6 +948,7 @@ export default function Home() {
             </div>
           </div>
         </div>
+        )}
       </main>
 
       {/* نافذة الإعدادات */}
