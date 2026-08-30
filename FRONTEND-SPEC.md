@@ -176,7 +176,7 @@
 |---|---|---|
 | Endpoint | `POST /api/conversation-intel` (جديد) — أو داخل `/api/chat` كإشارة؛ يُحدَّد في CR | لا تنفيذ قبل الاعتماد |
 | Schema | طلب: `{ conversationId, kind: "title" \| "completion", draft? }` · رد: `{ kind, value, provider, generatedAt }` | zod (نفس نمط lib/validation) |
-| Provider/Model resolution | إعادة استخدام `lib/ai` الحالي (Gemini→HF→Groq→demo) — **لا مزود جديد** | قيد المزودات القائم |
+| Provider/Model resolution | إعادة استخدام `lib/ai` الحالي (المطلوب → Groq → Gemini → HF → demo) — **لا مزود جديد** | قيد المزودات القائم |
 | Fallback | فشل/لا مفتاح → **لا اقتراح ولا عنوان** (لا كتلة، لا رسالة خاطئة)؛ يبقى `titleFromMessages` | حتمية |
 | Rate limit | حد خاص مستقل (داخل نافذة 20/دقيقة الحالية أو حده الخاص) — يُقرَّر في CR | لا إساءة |
 | Privacy boundary | هل تُرسل الرسائل لمزود خارجي لتوليد العنوان؟ — **قرار خصوصية صريح** يُعتمد قبل أي تنفيذ | بلا إرسال بلا موافقة |
@@ -279,7 +279,8 @@ FRONTEND-SPEC v1.1    APPROVED [E-001 (8918512), E-002..E-007 (PR #4)]  ← ال
    │  → بناء السياق (history + files نصًا مستخرجًا + system)
    ▼
 [AI] lib/ai/index.ts → resolveProvider(modelId, overrideKey)
-   │    fallback chain: gemini/groq/huggingface → demo (بلا مفتاح → demo حتمي)
+   │    fallback chain (lib/ai/index.ts): المزود المطلوب → Groq → Gemini → HF → demo
+   │    (search مستقل — بلا تراجع، خطأ واضح بلا مفتاح؛ demo حتمي عند غياب كل المفاتيح)
    │    lib/ai/providers/{gemini,groq,huggingface,search,demo}.ts
    │    lib/ai/sse.ts → تحويل التدفق إلى SSE (أسطر `data:` / `done`)
    ▼
