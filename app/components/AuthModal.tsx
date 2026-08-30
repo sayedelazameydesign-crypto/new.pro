@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { X, LogIn, UserPlus, Loader2, Lock } from "lucide-react";
+import { X, LogIn, UserPlus, Loader2, Lock, Github, Chrome } from "lucide-react";
 import type { TFunc } from "@/lib/i18n";
 
 interface Props {
@@ -12,15 +12,29 @@ interface Props {
   t: TFunc;
   onClose: () => void;
   onSuccess: () => void;
+  providers?: { github: boolean; google: boolean };
 }
 
-export default function AuthModal({ enabled, t, onClose, onSuccess }: Props) {
+export default function AuthModal({ enabled, t, onClose, onSuccess, providers }: Props) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  const hasSocial = !!(providers?.github || providers?.google);
+
+  const social = async (p: "github" | "google") => {
+    setErr(null);
+    setBusy(true);
+    try {
+      await signIn(p, { redirect: true, callbackUrl: "/" });
+    } catch {
+      setErr(t("authFailed"));
+      setBusy(false);
+    }
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +92,39 @@ export default function AuthModal({ enabled, t, onClose, onSuccess }: Props) {
           </div>
         ) : (
           <form onSubmit={submit} className="px-6 py-5 space-y-4">
+            {/* الدخول الاجتماعي — يظهر عند تفعيل المزودات */}
+            {hasSocial && (
+              <div className="space-y-2">
+                {providers?.google && (
+                  <button
+                    type="button"
+                    onClick={() => social("google")}
+                    disabled={busy}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[var(--border)] bg-white text-slate-800 text-[13px] font-bold hover:bg-slate-50 transition-colors disabled:opacity-50"
+                  >
+                    <Chrome size={16} className="text-blue-500" />
+                    {t("authGoogle")}
+                  </button>
+                )}
+                {providers?.github && (
+                  <button
+                    type="button"
+                    onClick={() => social("github")}
+                    disabled={busy}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#24292f] text-white text-[13px] font-bold hover:bg-[#3b4148] transition-colors disabled:opacity-50"
+                  >
+                    <Github size={16} />
+                    {t("authGithub")}
+                  </button>
+                )}
+                <div className="flex items-center gap-3 py-1">
+                  <div className="flex-1 h-px bg-[var(--border)]" />
+                  <span className="text-[10px] font-bold text-[var(--muted)]">{t("authOr")}</span>
+                  <div className="flex-1 h-px bg-[var(--border)]" />
+                </div>
+              </div>
+            )}
+
             {/* التبويبات */}
             <div className="flex rounded-xl overflow-hidden border border-[var(--border)]">
               <button

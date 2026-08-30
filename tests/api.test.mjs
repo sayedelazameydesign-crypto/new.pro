@@ -270,6 +270,9 @@ test("GET /api/auth/status بدون إعداد الحسابات → enabled:fals
   const j = await res.json();
   assert.equal(j.enabled, false);
   assert.equal(j.user, null);
+  // المزودات الاجتماعية تُكشف دائمًا كقيم منطقية
+  assert.equal(typeof j.providers?.github, "boolean");
+  assert.equal(typeof j.providers?.google, "boolean");
 });
 
 test("POST /api/auth/register بصيغة صالحة → 503 (غير مفعّل بعد)", async () => {

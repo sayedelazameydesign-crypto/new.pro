@@ -1,15 +1,22 @@
 // ===== إعداد المصادقة (Auth.js v5) =====
 // جاهز فورًا: بريد + كلمة مرور (تُخزَّن مجزأةً في Neon — scrypt).
-// ترقية اختيارية: أضف GITHUB_ID + GITHUB_SECRET → يظهر زر الدخول بـ GitHub تلقائيًا.
+// ترقية: أضف AUTH_GITHUB_ID/SECRET أو AUTH_GOOGLE_ID/SECRET → تظهر أزرار الدخول الاجتماعي تلقائيًا.
 
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
 import { findUserByEmail, verifyPassword } from "./auth-db";
 import { checkRateLimit, getClientIp } from "./rate-limit";
 
 /** هل المصادقة جاهزة؟ (يتطلب AUTH_SECRET + قاعدة البيانات) */
 export const authEnabled = () => !!process.env.AUTH_SECRET && !!process.env.DATABASE_URL;
+
+/** المزودات الاجتماعية المفعّلة (تظهر كأزرار في واجهة الدخول) */
+export const socialProviders = () => ({
+  github: !!process.env.AUTH_GITHUB_ID && !!process.env.AUTH_GITHUB_SECRET,
+  google: !!process.env.AUTH_GOOGLE_ID && !!process.env.AUTH_GOOGLE_SECRET,
+});
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
@@ -38,8 +45,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
     // يُضاف فقط عند تهيئة OAuth (اختياري — لا يمنع عمل البريد/كلمة المرور)
-    ...(process.env.GITHUB_ID && process.env.GITHUB_SECRET
-      ? [GitHub({ clientId: process.env.GITHUB_ID, clientSecret: process.env.GITHUB_SECRET })]
+    ...(process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET
+      ? [GitHub({ clientId: process.env.AUTH_GITHUB_ID, clientSecret: process.env.AUTH_GITHUB_SECRET })]
+      : []),
+    ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
+      ? [Google({ clientId: process.env.AUTH_GOOGLE_ID, clientSecret: process.env.AUTH_GOOGLE_SECRET })]
       : []),
   ],
   callbacks: {

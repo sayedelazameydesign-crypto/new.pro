@@ -46,9 +46,14 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [providerUsed, setProviderUsed] = useState<string | null>(null); // المزود الفعلي كما قرره الخادم
   const [syncState, setSyncState] = useState<"off" | "syncing" | "synced">("off");
-  const [authInfo, setAuthInfo] = useState<{ enabled: boolean; user: { id: string; email: string; name?: string } | null }>({
+  const [authInfo, setAuthInfo] = useState<{
+    enabled: boolean;
+    user: { id: string; email: string; name?: string } | null;
+    providers?: { github: boolean; google: boolean };
+  }>({
     enabled: false,
     user: null,
+    providers: { github: false, google: false },
   });
   const [showAuth, setShowAuth] = useState(false);
 
@@ -636,6 +641,7 @@ export default function Home() {
         <AuthModal
           enabled={authInfo.enabled}
           t={t}
+          providers={authInfo.providers}
           onClose={() => setShowAuth(false)}
           onSuccess={async () => {
             setShowAuth(false);
