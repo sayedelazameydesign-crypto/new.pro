@@ -4,7 +4,7 @@
 
 ```text
 BASELINE            auth-baseline -> 289c7f5   (AUTH HARDENED / FINAL — محمي، غير قابل للإزاحة)
-CURRENT_CHECKPOINT  51/51 tests green (آخر تحديث: 2026-08-30)
+CURRENT_CHECKPOINT  6cfa882 — المرحلة 5.1 (قراءة الملفات) مكتملة ومفعّلة حيًا (2026-08-30)
 
 COMPLETED
   - المنصة الأساسية (Next 15 / RTL / بث / 4 مزودات + بحث / مزامنة Neon / LocalStore)
@@ -22,13 +22,16 @@ BLOCKED
   - Upstash                          = بانتظار UPSTASH_REDIS_REST_URL/TOKEN من المستخدم
   - Vercel CLI token                 = منتهي (لا يضر؛ النشر عبر git integration)
 
-TEST_STATUS        51/51 PASS  (25 API + 12 هوية + 2 سباق + 10 استخراج ملفات + 2 مرفقات API)
-CI_STATUS          PASS (آخر: 289c7f5 + 0ccd076; الجولة الحالية تجري بعد الرفع)
+TEST_STATUS        51/51 PASS  (25 API + 12 هوية + 2 سباق + 10 استخراج ملفات + 2 مرفقات API) — متحققة على CI نفسه
+CI_STATUS          PASS (6cfa882)
 DEPLOYMENT_STATUS   LIVE — https://new-pro-kohl.vercel.app (HTTP 200)
 SECURITY_STATUS    No secret leakage (فحص كامل التاريخ نظيف) · BYOK/صلاحيات/بنية لم تُمس
 
-NEXT_SAFE_ACTION   (بعد رفع الجولة التاسعة + دليل حي) — من ROADMAP بالترتيب:
-                   1) المرحلة 5.2: توليد الصور FLUX عبر HF (مشروط بتفعيل Inference Providers يدويًا)
+NEXT_SAFE_ACTION   — من ROADMAP بالترتيب:
+                   1) المرحلة 5.3: الصوت Web Speech API (واجهة فقط — بلا خادم، قابلة للتحقق بمتصفح حقيقي)
+                   2) المرحلة 5.4: التذكّر (ملخص ذكي للمحادثات الطويلة عبر Neon)
+                   3) المرحلة 5.2: توليد الصور FLUX عبر HF (مشروط بتفعيل Inference Providers يدويًا من حساب المستخدم)
+                   4) المرحلة 4: OpenRouter / DeepSeek (تراجع إضافي)
                    2) المرحلة 5.3: الصوت Web Speech API (واجهة فقط — بلا خادم)
                    3) المرحلة 5.4: التذكّر (ملخص ذكي للمحادثات الطويلة)
                    4) المرحلة 4: OpenRouter / DeepSeek (تراجع إضافي) — بانتظار مفاتيح/أمر
