@@ -4,11 +4,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useUiStore } from "@/lib/ui-store";
+import { copyShareLink, resolveShareId } from "@/lib/share";
 import {
   Bot,
   BookOpen,
   Copy,
   Menu,
+  Share2,
   Cloud,
   ImagePlus,
   LogIn,
@@ -88,6 +91,8 @@ export default function Home() {
   });
   const [showAuth, setShowAuth] = useState(false);
   const [readMode, setReadMode] = useState(false); // Item 2: وضع القراءة (يُصفَّر عند تبديل المحادثة)
+  const [shareMissing, setShareMissing] = useState<string | null>(null); // Item 3: ?c=id غير موجود محليًا
+  const appliedShareRef = useRef(false); // يطبَّق مرة واحدة عند أول تحميل
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -119,6 +124,21 @@ export default function Home() {
 
     setConversations(nextConvs);
     setSettings(nextSettings);
+
+    // Item 3 — مشاركة ?c=id: فتح المحادثة المطلوبة مرة واحدة عند أول تحميل (بلا طلب جديد)
+    if (!appliedShareRef.current) {
+      appliedShareRef.current = true;
+      const res = resolveShareId(
+        typeof window !== "undefined" ? window.location.search : null,
+        nextConvs.map((c) => c.id)
+      );
+      if (res.status === "ok") {
+        setActiveId(res.id);
+      } else if (res.status === "unknown") {
+        // لا محادثة عشوائية ولا انهيار: حالة not-found واضحة
+        setShareMissing(res.id);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -675,6 +695,22 @@ export default function Home() {
                 <BookOpen size={18} />
               </button>
             )}
+            {active && (
+              <button
+                onClick={async () => {
+                  // Item 3: نسخ رابط ?c=id — بلا أي طلب شبكة
+                  const r = await copyShareLink(active.id);
+                  useUiStore
+                    .getState()
+                    .pushToast(r === "copied" ? "success" : "error", r === "copied" ? t("shareCopied") : t("shareCopyFailed"));
+                }}
+                className="p-2 rounded-xl hover:bg-[var(--bg)]"
+                title={t("share")}
+                aria-label={t("share")}
+              >
+                <Share2 size={18} />
+              </button>
+            )}
             <button
               onClick={() => setShowSettings(true)}
               className="p-2 rounded-xl hover:bg-[var(--bg)]"
@@ -702,6 +738,30 @@ export default function Home() {
             </span>
           )}
         </div>
+
+        {/* Item 3 — رابط مشاركة بمعرف غير موجود محليًا: لا عشوائية، لا انهيار */}
+        {shareMissing && (
+          <div className="mx-auto w-full max-w-3xl px-4 pt-3">
+            <div className="flex items-center justify-between gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] font-bold text-amber-400">
+              <span className="truncate">{t("shareMissing")}</span>
+              <button
+                onClick={() => {
+                  setShareMissing(null);
+                  // تنظيف الرابط (بلا إعادة تحميل، بلا طلب)
+                  if (typeof window !== "undefined" && window.history?.replaceState) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete("c");
+                    window.history.replaceState(null, "", url.toString());
+                  }
+                }}
+                className="shrink-0 underline underline-offset-2"
+                aria-label={t("shareMissingClose")}
+              >
+                {t("shareMissingClose")} ←
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* تنبيه وضع العرض التجريبي — يرشد المستخدم لإضافة مفتاح */}
         {providerUsed === "demo" && (

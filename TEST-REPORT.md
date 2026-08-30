@@ -1,7 +1,7 @@
 # تقرير الاختبارات — نواة AI
 
-> آخر تحديث: جولة 16 (Phase 6/Item 2 — وضع القراءة + تصدير Markdown/PDF)
-> النتيجة الكاملة: **136/136 ✅** — lint 0/0 · typecheck نظيف · build ✓ · تحقق حي 17/17
+> آخر تحديث: جولة 17 (Phase 6/Item 3 — مشاركة المحادثة ?c=id)
+> النتيجة الكاملة: **148/148 ✅** — lint 0/0 · typecheck نظيف · build ✓ · تحقق حي 16/16
 
 ---
 
@@ -47,6 +47,28 @@ npm run typecheck # نظيف
 npm run build     # ✓ Compiled successfully (6/6 صفحات)
 npm test          # 120/120 ✅
 ```
+
+---
+
+## الجولة 17 — Phase 6/Item 3: مشاركة المحادثة عبر ?c=id
+
+| البند | النتيجة |
+|---|---|
+| Query Resolution (S-1..S-12) | ✅ 12/12 |
+| فتح مباشر + Refresh (حي) | ✅ |
+| مشاركة/نسخ الرابط (Clipboard حقيقي + Toast zustand) | ✅ |
+| Malformed/Unknown (لا crash، لا عشوائية) | ✅ (حي) |
+| لا محتوى رسائل/أسرار في الرابط | ✅ (فحص) |
+| Security Gate | ✅ (لا innerHTML/لا أسرار/لا شبكة/لا endpoint عام) |
+| npm test (14 ملفات، خادم جديد) | ✅ **148/148** |
+| lint / typecheck / build | ✅ 0/0 · نظيف · ✓ |
+| تحقق حي (verify-item3.mjs — متصفح) | ✅ **16/16** |
+
+### ما أُنجز
+- `lib/share.ts` (جديد): `isValidShareId` (regex صارم) · `buildShareUrl` (id فقط) · `parseShareId` · `resolveShareId` (none/ok/unknown) · `copyShareLink` (Clipboard API + fallback execCommand).
+- `app/page.tsx`: resolution مرة واحدة عند أول تحميل بعد loadAll (لا طلب جديد)؛ زر Share2 في الرأس → Toast نجاح/فشل (zustand)؛ حالة not-found (banner + إخفاء يمسح c من التاريخ).
+- `lib/i18n.ts`: share/shareCopied/shareCopyFailed/shareMissing/shareMissingClose (ar/en).
+- مؤكد حيًا: clipboard حقيقي (قرأنا الرابط من الحافظة)، 0 شبكة أثناء النسخ، جهاز نظيف = لا كشف (privacy local-only).
 
 ---
 

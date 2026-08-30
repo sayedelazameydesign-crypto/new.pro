@@ -89,3 +89,21 @@
   - `pdfkit` (موجود أصلًا في dependencies لكنه **DEV ONLY** — توليد عينات للاختبارات فقط): استخدامه إنتاجيًا يتطلب تضمين خط عربي + معالجة تشكيل (shaping) — حجم/جودة/خطر دون مبرر. **مرفوض لهذا البند.**
   - `jsPDF` (dependency جديدة + خط عربي مضمّن): مرفوض — نفس مبرر pdfkit مع إضافة اعتماد جديد.
 - **القيد الموثق:** المستخدم يحفظ الملف من حوار الطباعة (يختار «حفظ كـ PDF»)؛ لا يُنشأ ملف .pdf برمجيًا بدون مكتبة — هذا مقبول وموثق في`PHASE6-ITEM2-AUDIT.md`.
+
+## 6) Item 3 (مشاركة ?c=id) — تحديث
+
+> **NO NEW DEPENDENCY — native/existing stack sufficient.**
+> لم تُضف أي حزمة لهذا البند، ولم تُحذف أي حزمة.
+
+| المكوّن | الآلية | ملاحظات |
+|---|---|---|
+| `lib/share.ts` (جديد) | URLSearchParams + regex أمان + `navigator.clipboard.writeText` مع fallback `document.execCommand("copy")` | كلها واجهات متصفح أصلية |
+| Toast | `zustand` الموجود (Item 1) — `useUiStore.getState().pushToast` | بلا مكتبة جديدة |
+| UI | `lucide-react` الموجود (Share2) | موجود أصلًا |
+| Resolution | حالة React محلية — **صفر طلبات شبكة** | لا dependency |
+| أثر bundle | إضافة صغيرة (كود JS بسيط) | بلا مكتبات |
+
+### قرارات موثقة
+- **لا مكتبة مشاركة** (نحن لا نرسل أي شيء — الرابط رمزي محلي).
+- **لا مكتبة clipboard** (native + fallback كافٍ؛ مُثبت حيًا بقراءة الحافظة الفعلية).
+- **لا endpoint عام جديد** — الحفاظ على Privacy Model: **local-only identifier** (راجع PHASE6-ITEM3-AUDIT.md §8).
