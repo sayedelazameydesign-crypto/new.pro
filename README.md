@@ -9,7 +9,7 @@
 
 `Next.js 15 (App Router)` · `Gemini API` · `Hugging Face` · `Vercel` · `TypeScript` · `Tailwind v4`
 
-[![CI — فحص النواة](https://github.com/sayedelazameydesign-crypto/new.pro/actions/workflows/ci.yml/badge.svg)](https://github.com/sayedelazameydesign-crypto/new.pro/actions) · 72/72 اختبارات ✅
+[![CI — فحص النواة](https://github.com/sayedelazameydesign-crypto/new.pro/actions/workflows/ci.yml/badge.svg)](https://github.com/sayedelazameydesign-crypto/new.pro/actions) · 85/85 اختبارات ✅
 
 [واجهة عربية/إنجليزية RTL/LTR] · [بث مباشر (Streaming)] · [مفاتيح مجانية فقط] · [قابلة للتوسع دون هدم المعمارية]
 
