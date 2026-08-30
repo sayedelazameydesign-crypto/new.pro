@@ -8,6 +8,7 @@ import {
   Copy,
   Menu,
   Cloud,
+  ImagePlus,
   LogIn,
   LogOut,
   Paperclip,
@@ -325,6 +326,76 @@ export default function Home() {
   };
 
   // ===== الإعدادات والبيانات =====
+  // ===== توليد صورة (المرحلة 5.2): FLUX عبر HF — تُعرض داخل المحادثة =====
+  const generateImageFlow = useCallback(async () => {
+    const prompt = input.trim();
+    if (!prompt) {
+      setError(t("imagePromptRequired"));
+      return;
+    }
+    if (streaming) return;
+    setInput("");
+
+    let conv: Conversation;
+    if (active && active.messages.length > 0) conv = { ...active, messages: [...active.messages] };
+    else if (active) conv = { ...active, messages: [] };
+    else conv = createChat();
+
+    const userMsg: ChatMessage = { id: uid(), role: "user", content: prompt, createdAt: Date.now() };
+    const placeholderId = uid();
+    const isNew = conv.messages.length === 0;
+    const nextConv: Conversation = {
+      ...conv,
+      title: isNew ? titleFromMessages([userMsg]) : conv.title,
+      updatedAt: Date.now(),
+      messages: [
+        ...conv.messages,
+        userMsg,
+        { id: placeholderId, role: "assistant", content: t("imageGenerating"), createdAt: Date.now() },
+      ],
+    };
+    update(conv.id, () => nextConv);
+    setActiveId(conv.id);
+    setError(null);
+
+    try {
+      // مفتاح لوحة المتصفح (HF) يتقدّم على بيئة الخادم — نفس سياسة BYOK
+      const keyName = PROVIDER_TO_KEY.huggingface;
+      const apiKey = keyName ? getKey(keyName) : "";
+      const res = await fetch("/api/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, ...(apiKey ? { apiKey } : {}) }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error ?? `HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
+      if (!blob.size) throw new Error(t("imageEmpty"));
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result));
+        fr.onerror = () => reject(new Error(t("imageEmpty")));
+        fr.readAsDataURL(blob);
+      });
+      update(conv.id, (c) => ({
+        ...c,
+        updatedAt: Date.now(),
+        messages: c.messages.map((m) =>
+          m.id === placeholderId ? { ...m, content: `![${t("imageAlt")}](${dataUrl})` } : m
+        ),
+      }));
+    } catch (err) {
+      update(conv.id, (c) => ({
+        ...c,
+        updatedAt: Date.now(),
+        messages: c.messages.filter((m) => m.id !== placeholderId),
+      }));
+      setError((err as Error).message || t("errorProvider"));
+    }
+  }, [active, input, streaming, createChat, update, t]);
+
   // ===== إرفاق الملفات (المرحلة 5): تُقرأ base64 وتُرسل مع الرسالة =====
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const handlePickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -650,6 +721,15 @@ export default function Home() {
                 title={t("attach")}
               >
                 <Paperclip size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={generateImageFlow}
+                disabled={streaming || !input.trim()}
+                className="w-10 h-10 shrink-0 rounded-xl text-[var(--muted)] hover:text-fuchsia-300 hover:bg-fuchsia-500/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                title={t("imageGenerate")}
+              >
+                <ImagePlus size={17} />
               </button>
               <textarea
                 value={input}

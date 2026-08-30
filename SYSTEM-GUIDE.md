@@ -201,6 +201,7 @@ syncScope = user:<canonicalUserId>
 | 3 | **4 مزودات + بحث** | Gemini · Groq · HuggingFace · Tavily(بحث بمصادر) · demo | ✅ **كلها مفعّلة حيًا** `{gemini,hf,groq,search:true}` |
 | 4 | **حسابات وأجهزة** | Auth.js v5؛ دخول بريد/كلمة مرور + Google (مفعّل حيًا) + GitHub (اختياري)؛ مزامنة عبر `user:<id>` + **Provisioning إلزامي لكل طرق الدخول** | ✅ بريد/كلمة مرور + Google OAuth + طبقة هوية (4.3)؛ GitHub بانتظار مفاتيحك |
 | 5 | **مزامنة عبر الأجهزة** | `nahwa_sync` في Neon؛ الزائر → `device:<id>`، المسجّل → `user:<canonicalUserId>` | ✅ مثبتة (جهازان قرآ نفس المحادثة) |
+| 5.2 | **توليد الصور (FLUX)** | `POST /api/image` → FLUX.1-schnell عبر HF (router→classic) → يُعرض في المحادثة؛ حد 10/دقيقة + BYOK لمفتاح HF + تعقيم أخطاء | ✅ منفذة (زر 🎨، 9 اختبارات وحدة + 3 API) |
 | 5.1 | **قراءة الملفات المرفقة** | مرفقات TXT/MD/CSV/JSON/PDF/DOCX → استخراج نص (pdf-parse + mammoth، مفتوحان) → دمج في رسالة المستخدم الأخيرة → رؤية المزود له | ✅ منفذة (زر 📎، حد 3×1MB، 10 اختبارات استخراج) |
 | 6 | **حماية الحدود** | 20 رسالة/دقيقة + 60 مزامنة/دقيقة، `429` + ترويسات `X-RateLimit-*`؛ Upstash اختياري لمشاركة الحدود | ✅ `memory` فعّال (Upstash اختياري) |
 | 7 | **لوحة مفاتيح BYOK** | من ⚙️ الإعدادات: أي زائر يلصق مفتاحه في المتصفح → تفعيل فوري دون لمس Vercel | ✅ مثبتة حيًا |
@@ -251,6 +252,7 @@ AuthModal (تبويب دخول/تسجيل) → POST /api/auth/register (تسجي
 | الطريقة والمسار | المدخلات | المخرجات |
 |---|---|---|
 | `POST /api/chat` | `{messages, modelId, apiKey?, files?}` — `files` (المرحلة 5): `{name, data(base64)}[]` حتى 3×1MB | SSE: `provider`, `chunk`, `sources`, `done`, `error` المعقّم |
+| `POST /api/image` | `{prompt, apiKey?}` — صورة FLUX (المرحلة 5.2) | `image/png` مباشرة أو `{error}` 400/429/502/503 |
 | `GET /api/models` | — | قائمة النماذج |
 | `GET /api/status` | — | `{gemini, huggingface, groq, search}` |
 | `GET /api/conversations` | النطاق من الجلسة/الجهاز | `{conversations, settings}` |
@@ -320,7 +322,7 @@ nahwa_users(
 ```
 npm run typecheck   → tsc --noEmit
 npm run build       → next build
-npm test            → 51/51 (25 API + 12 هوية + 2 سباق + 10 استخراج ملفات + 2 مرفقات API)
+npm test            → 63/63 (25 API + 12 هوية + 2 سباق + 10 استخراج + 2 مرفقات API + 9 صور + 3 صور API)
 npm run check:keys  → تشخيص المزودات
 ```
 

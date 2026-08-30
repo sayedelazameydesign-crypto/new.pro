@@ -270,6 +270,37 @@ test("POST /api/chat مع مرفق بصيغة غير مدعومة → 400 واض
   assert.match(j.error, /غير مدعومة/);
 });
 
+test("POST /api/image بلا مفتاح → 503 برسالة واضحة (المرحلة 5.2)", async () => {
+  const res = await fetch(`${BASE}/api/image`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt: "قطة فضائية" }),
+  });
+  assert.equal(res.status, 503);
+  const j = await res.json();
+  assert.match(j.error, /Hugging Face|HF_TOKEN/);
+});
+
+test("POST /api/image بوصف فارغ → 400", async () => {
+  const res = await fetch(`${BASE}/api/image`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt: "   " }),
+  });
+  assert.equal(res.status, 400);
+});
+
+test("POST /api/image بمفتاح وهمي → يصل HF ويُرجع خطأ واضحًا (المسار كامل)", async () => {
+  const res = await fetch(`${BASE}/api/image`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt: "غروب", apiKey: "hf_fake_key_for_probe_123" }),
+  });
+  assert.equal(res.status, 502);
+  const j = await res.json();
+  assert.match(j.error, /مفتاح/);
+});
+
 test("تجاوز حد الرسائل يعيد 429 برسالة واضحة وترويسات الحماية", async () => {
   const statuses = [];
   for (let i = 0; i < 25; i++) {
