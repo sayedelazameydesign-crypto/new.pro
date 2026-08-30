@@ -121,3 +121,18 @@
 - لا مكتبة clipboard/شبكة جديدة؛ Selectors عبر getByRole/getByText مع إضافة `aria-label="إغلاق"` واحدة (وصولية) — لا data-testid.
 - الحتمية: وضع demo المحلي (بلا مفاتيح) — اختبارات بلا LLM خارجي، بلا أسرار، بلا بيانات حقيقية.
 - `RATE_LIMIT_DISABLED=1` يُفعَّل في بيئة الاختبار فقط (webServer) — متغير موجود أصلًا موثق «للاختبارات المحلية فقط».
+
+
+## 8) Item 5 (تحسينات: اختصار إرسال + سحب ملفات + ملء شاشة) — تحديث
+
+> **NO NEW DEPENDENCY** — كله Web APIs قياسية (KeyboardEvent / DragEvent+DataTransfer / Fullscreen API)، وصفر مكتبات جديدة أو ترقيات.
+
+| الجزء | المصدر | أثر runtime |
+|---|---|---|
+| `lib/shortcuts.ts` | قياسي — لا حزمة | NONE |
+| `lib/attach-utils.ts` | قياسي — لا حزمة (File هو API المتصفح/Node) | NONE |
+| ملء الشاشة | Fullscreen API (documentElement) | NONE |
+| السحب والإفلات | DragEvent/DataTransfer | NONE |
+
+- `package-lock.json` بلا أي تغيير (إثبات: `git diff --name-only` لا يذكره).
+- الحزم القائمة لم تُرقَّ أي منها؛ الاختبارات عبر node:test الموجود + Playwright DEV ONLY الموجود.

@@ -10,7 +10,9 @@ import {
   Bot,
   BookOpen,
   Copy,
+  Maximize,
   Menu,
+  Minimize,
   Share2,
   Cloud,
   ImagePlus,
@@ -27,6 +29,8 @@ import {
   WifiOff,
   X,
 } from "lucide-react";
+import { isSendShortcut } from "@/lib/shortcuts";
+import { classifyAttach } from "@/lib/attach-utils";
 import Markdown from "./components/Markdown";
 import ReadMode from "./components/ReadMode";
 import Sidebar from "./components/Sidebar";
@@ -93,6 +97,16 @@ export default function Home() {
   const [readMode, setReadMode] = useState(false); // Item 2: وضع القراءة (يُصفَّر عند تبديل المحادثة)
   const [shareMissing, setShareMissing] = useState<string | null>(null); // Item 3: ?c=id غير موجود محليًا
   const appliedShareRef = useRef(false); // يطبَّق مرة واحدة عند أول تحميل
+
+  // ===== CR-005 (Item 5): سحب الملفات + ملء الشاشة =====
+  const [dragging, setDragging] = useState(false); // حالة بصرية لسحب الملفات
+  const dragDepth = useRef(0); // عمق أحداث drag لتفادي وميض onDragLeave عند عبور الأطفال
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  // يُحسب بعد التركيب (useEffect) لتفادي hydration mismatch (SSR: بلا document)
+  const [fsSupported, setFsSupported] = useState(false);
+  useEffect(() => {
+    setFsSupported(!!document.documentElement.requestFullscreen);
+  }, []);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -533,20 +547,15 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId]);
   // ===== إرفاق الملفات (المرحلة 5): تُقرأ base64 وتُرسل مع الرسالة =====
+  // CR-005: مسار موحّد (اختيار + سحب) يمر بنفس الفحوصات (allowlist/الحجم/العدد) قبل أي FileReader — لا مسار شبكة جديد.
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const handlePickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = Array.from(e.target.files ?? []);
-    e.target.value = "";
-    const next = [...files];
-    for (const f of picked) {
-      if (next.length >= 3) {
-        setError(t("fileMax"));
-        break;
-      }
-      if (f.size > 1_000_000) {
-        setError(t("fileTooBig"));
-        continue;
-      }
+  const acceptPicked = (picked: File[]) => {
+    const { accepted, rejected } = classifyAttach(picked);
+    if (rejected.length > 0) {
+      const r = rejected[0];
+      setError(t(r.reason === "unsupported" ? "fileUnsupported" : r.reason === "tooBig" ? "fileTooBig" : "fileMax"));
+    }
+    for (const f of accepted) {
       const reader = new FileReader();
       reader.onload = () => {
         const dataUrl = String(reader.result ?? "");
@@ -554,6 +563,38 @@ export default function Home() {
         setFiles((prev) => [...prev, { name: f.name, data }]);
       };
       reader.readAsDataURL(f);
+    }
+  };
+  const handlePickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    acceptPicked(picked);
+  };
+  const handleDropFiles = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    dragDepth.current = 0;
+    setDragging(false);
+    if (streaming) return; // نفس حراسة زر الإرفاق أثناء البث
+    acceptPicked(Array.from(e.dataTransfer?.files ?? []));
+  };
+
+  // ===== CR-005: ملء الشاشة (زر UI فقط — بلا اختصار، بقرار المالك) =====
+  useEffect(() => {
+    const onFsChange = () => {
+      const fs = !!document.fullscreenElement;
+      setIsFullscreen(fs);
+      // data-fs: إثبات حالة توثيقي + خطاف CSS مستقبلي (بلا تغيير تخطيط حاليًا)
+      document.documentElement.toggleAttribute("data-fs", fs);
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+    } catch {
+      // منصة ترفض (متصفح مقيد/سياسة iframe): تبقى الواجهة كما هي بلا خطأ ظاهر
     }
   };
 
@@ -709,6 +750,16 @@ export default function Home() {
                 aria-label={t("share")}
               >
                 <Share2 size={18} />
+              </button>
+            )}
+            {fsSupported && (
+              <button
+                onClick={toggleFullscreen}
+                className="p-2 rounded-xl hover:bg-[var(--bg)]"
+                title={isFullscreen ? t("fullscreenExit") : t("fullscreen")}
+                aria-label={isFullscreen ? t("fullscreenExit") : t("fullscreen")}
+              >
+                {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
               </button>
             )}
             <button
@@ -900,7 +951,28 @@ export default function Home() {
         {!readMode && (
         <div className="px-4 pb-4 pt-2 shrink-0">
           <div className="max-w-3xl mx-auto">
-            <div className="flex items-end gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-xl shadow-black/5 focus-within:border-indigo-500 transition-colors">
+            <div
+              role="group"
+              aria-label={t("composerAria")}
+              onDragEnter={(e) => {
+                if (streaming) return;
+                e.preventDefault();
+                dragDepth.current += 1;
+                setDragging(true);
+              }}
+              onDragOver={(e) => {
+                if (streaming) return;
+                e.preventDefault(); // إلزامي للسماح بـdrop
+              }}
+              onDragLeave={() => {
+                dragDepth.current = Math.max(0, dragDepth.current - 1);
+                if (dragDepth.current === 0) setDragging(false);
+              }}
+              onDrop={handleDropFiles}
+              className={`flex items-end gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-xl shadow-black/5 focus-within:border-indigo-500 transition-colors ${
+                dragging ? "border-dashed !border-indigo-400 ring-2 ring-indigo-500/40" : ""
+              }`}
+            >
               {/* المرفقات المحددة (المرحلة 5): شريبات صغيرة قابلة للإزالة */}
               {files.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-1">
@@ -966,7 +1038,11 @@ export default function Home() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
+                  if (isSendShortcut(e)) {
+                    // CR-005: الاختصار المعتمد الوحيد — Ctrl/⌘+Enter → إرسال
+                    e.preventDefault();
+                    sendMessage();
+                  } else if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     sendMessage();
                   }
