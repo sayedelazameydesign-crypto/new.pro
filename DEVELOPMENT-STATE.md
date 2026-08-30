@@ -4,9 +4,12 @@
 
 ```text
 BASELINE            auth-baseline -> 289c7f5   (AUTH HARDENED / FINAL — محمي، غير قابل للإزاحة)
-CURRENT_CHECKPOINT  main = d8d0d9e — المرحلة 6/Item 5: CR-005 مغلق بالكامل
-                   (2adab69 عبر PR #1) — 163/163 Unit + 19/19 E2E + CI success
-                   + Vercel حي بخدمة Item 5 (4/4 علامات) — HEAD السابق 38d9bb3 (Item 4)
+CURRENT_CHECKPOINT  main = c02fdb2 (HEAD). سلسلة التوثيق: 2adab69 (Item 5 عبر PR #1)
+                   → d8d0d9e → 51a6519 (PR #3 FRONTEND-SPEC v1.0) → 8918512 (PR #2 إغلاق
+                   CR-005) → 301f768 (PR #4 FRONTEND-SPEC v1.1) → c02fdb2 (PR #5 v1.1.1)
+                   — لا تغيير كود منذ 2adab69 (توثيقات فقط). الفرع الوحيد: main.
+                   CR-006 (Item 6): العقد معتمد (أ–و) عبر PR #6 — التنفيذ التالي.
+                   المرجع البرمجي للمشروع = 8918512 (لم يتغير: توثيقات فقط بعده)
 
 STATUS_MATRIX
   - 5.1 = PASS            (قراءة ملفات — مثبتة حيًا)
@@ -70,3 +73,9 @@ NEXT_SAFE_ACTION   المرحلة 6 — بند 5: تحسينات (اختصارا
 ```
 
 <!-- تحديث: 2026-08-30 · المرحلة 6/Item 4: E2E (148/148 + 15/15) · هذا الـcommit -->
+
+
+## إضافات هذه الجلسة (توثيق)
+- FRONTEND-SPEC v1.0 → v1.1 (بروتوكول PR: 3 ثم 2 ثم 4 ثم 5) — مصدر الحقيقة المعتمد للواجهة
+  (Evidence Index E-001..E-007، §14 مكدس، §15 معمارية/تدفق، §16 env flags).
+- CR-006 العقد: PHASE6-ITEM6-BACKEND-CONTRACT.md — معتمد (أ–و) — Baseline رسمي لتنفيذ Item 6.
