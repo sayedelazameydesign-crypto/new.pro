@@ -1,6 +1,9 @@
 {
   "name": "nawah-ai",
   "version": "0.1.0",
+  "engines": {
+    "node": ">=20"
+  },
   "private": true,
   "description": "نواة AI — منصة محادثة ذكية كاملة مجانية التشغيل (Next.js + Gemini + Hugging Face)",
   "scripts": {
