@@ -286,3 +286,60 @@ export function stopSpeak(api: SpeechApi): void {
     /* ignore */
   }
 }
+
+// ===== واجهة الصوت المعيارية — المرحلة D1 (Voice Layer) =====
+// إضافة أسماء الواجهة المطلوبة فوق نفس التنفيذ المُختبَر (S-1..S-7) — بلا ازدواج.
+
+/** اللغة الافتراضية: عربي مصري — قابلة للتغيير عند الاستدعاء */
+export const DEFAULT_SPEECH_LANG = "ar-EG";
+
+/** هل الإملاء (SpeechRecognition) مدعوم؟ */
+export function isSpeechRecognitionSupported(api?: SpeechApi): boolean {
+  return speechAvailable(api).dictation;
+}
+
+/** هل القراءة (speechSynthesis) مدعومة؟ */
+export function isSpeechSynthesisSupported(api?: SpeechApi): boolean {
+  return speechAvailable(api).tts;
+}
+
+/** بدء الاستماع (الإملاء) — تعيد null بلا دعم، وتُشغّل الجلسة فورًا */
+export function startListening(
+  api: SpeechApi,
+  lang: string,
+  handlers: RecognizerHandlers
+): Recognizer | null {
+  const rec = createRecognizer(api, lang, handlers);
+  rec?.start();
+  return rec;
+}
+
+/** إيقاف الاستماع */
+export function stopListening(rec: Recognizer | null | undefined): void {
+  rec?.stop();
+}
+
+/** إلغاء أي قراءة جارية (مرادف stopSpeak باسم قياسي) */
+export function cancelSpeech(api: SpeechApi): void {
+  stopSpeak(api);
+}
+
+/** إيقاف القراءة مؤقتًا (استئناف ممكن عبر resumeSpeech) */
+export function pauseSpeech(api: SpeechApi): void {
+  const s = api?.synthesis as { pause?: () => void } | undefined;
+  try {
+    s?.pause?.();
+  } catch {
+    /* ignore */
+  }
+}
+
+/** استئناف قراءة موقوفة */
+export function resumeSpeech(api: SpeechApi): void {
+  const s = api?.synthesis as { resume?: () => void } | undefined;
+  try {
+    s?.resume?.();
+  } catch {
+    /* ignore */
+  }
+}

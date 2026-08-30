@@ -7,18 +7,10 @@ import { NextRequest } from "next/server";
 import { streamReply, resolveProvider, sanitizeError } from "@/lib/ai";
 import { mergeAttachments } from "@/lib/file-extract";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { parseChatBody } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // أقصى مدة على Vercel Hobby المجاني
-
-interface ChatBody {
-  messages?: { role: string; content: string }[];
-  modelId?: string;
-  system?: string;
-  temperature?: number;
-  apiKey?: string; // مفتاح من لوحة المتصفح (BYOK) — اختياري
-  files?: { name: string; data: string }[]; // مرفقات (المرحلة 5) — اختياري
-}
 
 // حد الحمولة الكلية: يسمح بملفات حتى ~4MB base64 (تحت حد Vercel 4.5MB)
 const MAX_INPUT_PAYLOAD = 4_400_000;
@@ -48,20 +40,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: ChatBody = {};
+  // ── طبقة 2: تسوية منطق الطلب عبر zod (تعيد نفس سلوك الفلترة اليدوية القديمة حرفيًا) ──
+  let rawJson: unknown = {};
   try {
     const raw = await req.text();
     if (raw.length > MAX_INPUT_PAYLOAD) {
       return Response.json({ error: "الرسالة أكبر من الحد المسموح" }, { status: 413 });
     }
-    body = raw ? JSON.parse(raw) : {};
+    rawJson = raw ? JSON.parse(raw) : {};
   } catch {
-    /* سيُرفض أدناه */
+    /* سيُرفض أدناه (messages: []) */
   }
 
-  const messages = Array.isArray(body.messages)
-    ? body.messages.filter((m) => m && m.role && typeof m.content === "string")
-    : [];
+  const body = parseChatBody(rawJson);
+  const messages = body.messages.slice(0, MAX_MESSAGES);
 
   const last = messages[messages.length - 1];
   if (!last || last.role !== "user") {
@@ -92,12 +84,11 @@ export async function POST(req: NextRequest) {
 
   // temperature مُتحقق منه (0..1.5) وإلا الافتراضي
   const temperature =
-    typeof body.temperature === "number" && Number.isFinite(body.temperature)
+    typeof body.temperature === "number"
       ? Math.min(1.5, Math.max(0, body.temperature))
       : 0.7;
 
-  const desiredModelId =
-    typeof body.modelId === "string" && body.modelId ? body.modelId : "gemini:gemini-2.5-flash";
+  const desiredModelId = body.modelId ? body.modelId : "gemini:gemini-2.5-flash";
 
   // مفتاح مُرسل من لوحة المتصفح (BYOK) — يتقدّم على بيئة الخادم في هذه الجلسة.
   // سياسة الأمان: لا يُخزَّن خادميًا، لا يُسجَّل، لا يظهر في أخطاء أو أحداث SSE،
@@ -112,7 +103,7 @@ export async function POST(req: NextRequest) {
   }
   const resolved = resolveProvider(desiredModelId, outKey || undefined);
 
-  const system = typeof body.system === "string" ? body.system : "";
+  const system = body.system ?? "";
   const maxTokens = Math.min(2048, Number(process.env.MAX_TOKENS) || 1024);
 
   const enc = new TextEncoder();

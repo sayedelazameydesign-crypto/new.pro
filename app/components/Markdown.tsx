@@ -3,6 +3,7 @@
 // ===== عرض الماركداون + تلوين الكود + زر نسخ =====
 
 import React, { useState } from "react";
+import { useUiStore } from "@/lib/ui-store";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
@@ -17,9 +18,11 @@ function CodeBlock({ className, children }: { className?: string; children?: Rea
     try {
       await navigator.clipboard.writeText(code);
       setCopied(true);
+      // إشعار مركزي (zustand) — نقطة الاستخدام الحقيقية للتوست
+      useUiStore.getState().pushToast("success", "تم نسخ الكود إلى الحافظة");
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      /* ignore */
+      useUiStore.getState().pushToast("error", "تعذر النسخ — اسمح بالوصول إلى الحافظة");
     }
   };
 

@@ -4,12 +4,20 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  DEFAULT_SPEECH_LANG,
+  cancelSpeech,
   cleanForSpeech,
-  splitForSpeech,
-  pickVoice,
-  speechAvailable,
   createRecognizer,
+  isSpeechRecognitionSupported,
+  isSpeechSynthesisSupported,
+  pauseSpeech,
+  pickVoice,
+  resumeSpeech,
   speak,
+  speechAvailable,
+  splitForSpeech,
+  startListening,
+  stopListening,
   stopSpeak,
 } from "../lib/speech";
 
@@ -163,6 +171,7 @@ test("S-6 speak يقرأ النص ويقسمه ويستدعي cancel أولًا"
     { onEnd: () => (ended = true) }
   );
   assert.equal(ok, true);
+  assert.equal(ended, false); // لم يُستدعَ onEnd بعد (لا يوجد جهاز ينطق فعلًا في هذا الاختبار)
   assert.equal(spoken[0], "CANCEL"); // يوقف السابق أولًا
   assert.ok(spoken.length >= 2, `قُسّم إلى ${spoken.length - 1} مقاطع`);
 });
@@ -192,4 +201,65 @@ test("S-7 stopSpeak يستدعي cancel ويتحمل غياب الواجهات",
   stopSpeak({ synthesis: { cancel: () => canceled++ } });
   assert.equal(canceled, 1);
   stopSpeak({}); // لا يرمي خطأ
+});
+
+// ===== واجهة الصوت المعيارية — المرحلة D1 (S-8..S-12) =====
+
+test("S-8 isSpeechRecognitionSupported / isSpeechSynthesisSupported تكتشف من البيئة", () => {
+  assert.equal(isSpeechRecognitionSupported(), false); // node بلا window
+  assert.equal(isSpeechSynthesisSupported(), false);
+  assert.equal(isSpeechRecognitionSupported({ recognition: class {} }), true);
+  assert.equal(isSpeechSynthesisSupported({ synthesis: {}, Utterance: class {} }), true);
+  assert.equal(isSpeechSynthesisSupported({ Utterance: class {} }), false); // بلا synthesis
+});
+
+test("S-9 startListening يبدأ فورًا مع دعم، ويعيد null بلا دعم", () => {
+  let started = 0;
+  class FakeRec {
+    lang = ""; continuous = false; interimResults = false;
+    onresult: unknown = null; onend: unknown = null; onerror: unknown = null;
+    start() { started++; }
+    stop() {} abort() {}
+  }
+  const rec = startListening({ recognition: FakeRec }, "ar-EG", {
+    onText: () => {}, onEnd: () => {}, onError: () => {},
+  });
+  assert.ok(rec);
+  assert.equal(started, 1);
+  assert.equal(isSpeechRecognitionSupported({ recognition: FakeRec }), true);
+  // بلا دعم
+  assert.equal(startListening({}, "ar", { onText() {}, onEnd() {}, onError() {} }), null);
+});
+
+test("S-10 stopListening يوقف الجلسة ويتحمل null", () => {
+  let stopped = 0;
+  const rec = {
+    active: true,
+    start() {}, stop() { stopped++; }, abort() {},
+  };
+  stopListening(rec);
+  assert.equal(stopped, 1);
+  assert.doesNotThrow(() => stopListening(null));
+  assert.doesNotThrow(() => stopListening(undefined));
+});
+
+test("S-11 pauseSpeech / resumeSpeech يمرران النداءات ويتحملان الغياب", () => {
+  const calls: string[] = [];
+  const api = { synthesis: { pause: () => calls.push("pause"), resume: () => calls.push("resume") } };
+  pauseSpeech(api);
+  resumeSpeech(api);
+  assert.deepEqual(calls, ["pause", "resume"]);
+  assert.doesNotThrow(() => pauseSpeech({}));
+  assert.doesNotThrow(() => resumeSpeech({}));
+});
+
+test("S-12 cancelSpeech يلغي القراءة (مرادف stopSpeak)", () => {
+  let cancelled = 0;
+  cancelSpeech({ synthesis: { cancel: () => cancelled++ } });
+  assert.equal(cancelled, 1);
+  assert.doesNotThrow(() => cancelSpeech({}));
+});
+
+test("S-13 DEFAULT_SPEECH_LANG = ar-EG (الافتراضي المطلوب)", () => {
+  assert.equal(DEFAULT_SPEECH_LANG, "ar-EG");
 });

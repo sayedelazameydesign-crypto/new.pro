@@ -3,6 +3,7 @@
 // ===== الشاشة الرئيسية: إدارة المحادثات + البث المباشر للردود =====
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Bot,
   Copy,
@@ -32,6 +33,7 @@ import { getModel, splitModelId } from "@/lib/models";
 import { getKey, PROVIDER_TO_KEY } from "@/lib/keys";
 import { makeT } from "@/lib/i18n";
 import {
+  DEFAULT_SPEECH_LANG,
   ambientSpeechApi,
   createRecognizer,
   speak,
@@ -44,6 +46,8 @@ import { pullRemote, pushRemote, mergeConversations } from "@/lib/sync";
 import { copyText, uid } from "@/lib/utils";
 import { summarize, shouldSummarize, composeSystem } from "@/lib/summary";
 import type { ChatMessage, Conversation, ProviderStatus, Settings } from "@/lib/types";
+import { queryKeys } from "@/lib/query-client";
+import Toasts from "@/app/components/Toasts";
 
 const store = new LocalStore();
 
@@ -51,7 +55,18 @@ export default function Home() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [settings, setSettings] = useState<Settings>(DEFAULTS_SETTINGS);
-  const [status, setStatus] = useState<ProviderStatus | null>(null);
+  // حالة المزودين عبر React Query (كاش + retry + staleTime) — بدل fetch منفصل
+  const { data: status } = useQuery({
+    queryKey: queryKeys.providerStatus,
+    queryFn: async () => {
+      const r = await fetch("/api/status");
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return (await r.json()) as ProviderStatus;
+    },
+    // نفس السلوك القديم عند الفشل/قبل التحميل (لا null يزعج الواجهة):
+    // لا نعرّض null — نعرض «الكل غير مفعّل» كما كان catch يفعل
+    initialData: { gemini: false, huggingface: false, groq: false, search: false } as ProviderStatus,
+  });
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<{ name: string; data: string }[]>([]);
   const [streaming, setStreaming] = useState(false);
@@ -105,10 +120,6 @@ export default function Home() {
 
   useEffect(() => {
     loadAll();
-    fetch("/api/status")
-      .then((r) => r.json())
-      .then(setStatus)
-      .catch(() => setStatus({ gemini: false, huggingface: false, groq: false, search: false }));
     fetch("/api/auth/status")
       .then((r) => r.json())
       .then(setAuthInfo)
@@ -430,7 +441,7 @@ export default function Home() {
   const recognizerRef = useRef<Recognizer | null>(null);
   const dictBaseRef = useRef("");
 
-  const speechLang = settings.lang === "ar" ? "ar-SA" : "en-US";
+  const speechLang = settings.lang === "ar" ? DEFAULT_SPEECH_LANG : "en-US";
 
   const toggleDictation = useCallback(async () => {
     if (dictating) {
@@ -481,7 +492,7 @@ export default function Home() {
       const api = ambientSpeechApi();
       const ok = speak(api, text, speechLang, {
         onEnd: () => setSpeakingId(null),
-        onError: (code) => setSpeakingId(null),
+        onError: () => setSpeakingId(null),
       });
       if (ok) setSpeakingId(id);
       else setError(t("speechUnsupported"));
@@ -490,11 +501,13 @@ export default function Home() {
   );
 
   // إيقاف القراءة عند تبديل المحادثة أو بدء بث جديد
+  // (المقصود: التنفيذ عند تغيير activeId فقط — لا عند كل تغيير في speakingId)
   useEffect(() => {
     if (speakingId) {
       stopSpeak(ambientSpeechApi());
       setSpeakingId(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId]);
   // ===== إرفاق الملفات (المرحلة 5): تُقرأ base64 وتُرسل مع الرسالة =====
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -925,6 +938,9 @@ export default function Home() {
           onImport={importData}
         />
       )}
+
+      {/* إشعارات zustand (Toasts) */}
+      <Toasts />
 
       {/* نافذة الحساب */}
       {showAuth && (

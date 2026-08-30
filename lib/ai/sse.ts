@@ -13,7 +13,8 @@ export async function* chunkLines(body: ReadableStream<Uint8Array>): AsyncGenera
       while ((idx = buf.indexOf("\n")) >= 0) {
         const line = buf.slice(0, idx).trim();
         buf = buf.slice(idx + 1);
-        if (line) yield line;
+        // أسطر التعليقات في SSE تبدأ بـ ":" — تُتجاهل (مواصفة SSE)
+        if (line && !line.startsWith(":")) yield line;
       }
     }
     if (buf.trim()) yield buf.trim();

@@ -61,7 +61,7 @@ test("PS-2 Gemini: بلا system → لا systemInstruction (لا كسر) ", asy
     assert.equal(body.systemInstruction, undefined);
   });
   try {
-    for await (const _c of geminiStream({ model: "gemini-2.5-flash", messages: [], apiKey: "k", maxTokens: 10 })) break;
+    for await (const c of geminiStream({ model: "gemini-2.5-flash", messages: [], apiKey: "k", maxTokens: 10 })) { void c; break; }
   } finally {
     restore();
   }
@@ -76,13 +76,13 @@ test("PS-3 Groq: system يُحقن كأول رسالة في مصفوفة OpenAI"
     assert.equal(body.messages.length, 2, "رسالتان: system + question");
   });
   try {
-    for await (const _c of groqStream({
+    for await (const c of groqStream({
       model: "llama-3.3-70b",
       messages: [{ role: "user", content: "سؤال" }],
       system: SYSTEM,
       apiKey: "k",
       maxTokens: 50,
-    })) break;
+    })) { void c; break; }
   } finally {
     restore();
   }
@@ -96,13 +96,13 @@ test("PS-4 HuggingFace: system يُحقن كأول رسالة في router payloa
     assert.equal(body.messages[0].content, SYSTEM);
   });
   try {
-    for await (const _c of huggingfaceStream({
+    for await (const c of huggingfaceStream({
       model: "Qwen/Qwen2.5-7B-Instruct",
       messages: [{ role: "user", content: "سؤال" }],
       system: SYSTEM,
       token: "k",
       maxTokens: 50,
-    })) break;
+    })) { void c; break; }
   } finally {
     restore();
   }
@@ -114,8 +114,8 @@ test("PS-5 Groq/HF: بلا system → رسائل كما هي (لا كسر للم
     assert.equal(body.messages[0].role, "user");
   });
   try {
-    for await (const _c of groqStream({ model: "m", messages: [{ role: "user", content: "x" }], apiKey: "k", maxTokens: 5 })) break;
-    for await (const _c of huggingfaceStream({ model: "m", messages: [{ role: "user", content: "x" }], token: "k", maxTokens: 5 })) break;
+    for await (const c of groqStream({ model: "m", messages: [{ role: "user", content: "x" }], apiKey: "k", maxTokens: 5 })) { void c; break; }
+    for await (const c of huggingfaceStream({ model: "m", messages: [{ role: "user", content: "x" }], token: "k", maxTokens: 5 })) { void c; break; }
   } finally {
     restore();
   }
