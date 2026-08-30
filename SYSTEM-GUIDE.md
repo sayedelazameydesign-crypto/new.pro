@@ -26,7 +26,7 @@
 ## 2) الفلسفة والقيود التصميمية (لا تُخالف)
 
 1. **مجاني بلا بطاقة دائمًا** — كل الخدمات المستخدمة مجانية (AI Studio، Hugging Face، Groq، Tavily، Neon، Vercel Hobby، GitHub).
-2. **لا يفشل طلب المحادثة أبدًا** — تراجع تلقائي على سلسلة: `المزود المطلوب → demo` إذا لم يتوفر مفتاح صالح.
+2. **لا يفشل الطلب في الظروف المدعومة** — يحاول النظام تزويد الرد عبر تراجع تلقائي إلى `demo` عند فشل المزود أو غياب المفتاح، **ضمن نطاق الأخطاء التي يدعمها مسار الترقّع** (انقطاع خدمة/مهلة خارج هذا النطاق تظهر كرسالة خطأ واضحة للمستخدم — لا ضمان مطلق).
 3. **يعمل بلا مفاتيح** — وضع demo جاهز؛ المفاتيح تُضيف قوة فقط.
 4. **قابل للتوسع دون هدم** — كل ميزة جديدة تُضاف كوحدة مستقلة؛ التخزين المحلي (LocalStore) يعمل دائمًا كقاع أمان.
 5. **واجهة عربية RTL مصقولة** — بث + تظليل كود + وضع داكن.
@@ -60,7 +60,7 @@
                                 أو من لوحة المتصفح BYOK) عبر عدة خوادم)
 ```
 
-**قاعدة المفاتيح:** `مفتاح البيئة (Vercel) > مفتاح المتصفح (BYOK) > demo`.
+**قاعدة المفاتيح (موضّحة في «سياسة حل المزودات» القسم 4.1):** `مفتاح البيئة (Vercel) > مفتاح المتصفح (BYOK) > demo`.
 
 ---
 
@@ -85,7 +85,7 @@
 
 | المسار | المهمة |
 |---|---|
-| `POST /api/chat` | المحادثة: يتحقق (رسائل/ترتيب/طول)، يقيّد بالـ rate limit، يبث SSE من `streamReply` مع أحداث `provider`/`delta`/`sources`/`done` |
+| `POST /api/chat` | المحادثة: يتحقق (رسائل/ترتيب/طول)، يقيّد بالـ rate limit، يبث SSE من `streamReply` (أحداث `provider`/`chunk`/`sources`/`done`/`error` المعقّم)، ويطبّق سياسة مفتاح المتصفح (4.2): تحقق صيغة → حذف محارف التحكم (400) → لا تخزين → لا تسجيل → تعقيم أخطاء |
 | `GET /api/models` | قائمة النماذج المتاحة للواجهة |
 | `GET /api/status` | حالة المزودات `{gemini, huggingface, groq, search}` — **بدون كشف أي مفتاح** |
 | `GET/PUT/DELETE /api/conversations` | مزامنة المحادثات: يقرر النطاق (`user:<id>` إن وُجد، وإلا `device:<id>`)؛ 60 طلب/دقيقة |
@@ -97,7 +97,7 @@
 
 | الملف | المهمة |
 |---|---|
-| `index.ts` | **العقل المدبر:** `resolveProvider(modelId, overrideKey?)` يقرر المزود والمفتاح (بيئة > المتصفح)؛ `streamReply()` يوزّع على المزودات، وأي فشل → تراجع تلقائي لـ demo |
+| `index.ts` | **العقل المدبر:** ينفّذ «سياسة حل المزودات» (4.1): `resolveProvider(modelId, overrideKey?)` + `streamReply()` + `sanitizeError()` (تعقيم إجباري) + تدقيق داخلي `[nawah][provider-fallback]` |
 | `providers/gemini.ts` | Gemini 2.5 Flash/Pro + 2.0 Flash (بث) |
 | `providers/groq.ts` | Groq: `openai/gpt-oss-120b` / `openai/gpt-oss-20b` (بث سريع) |
 | `providers/huggingface.ts` | HF: Qwen2.5-7B / Phi-3.5-mini عبر **Inference Providers** |
@@ -129,6 +129,40 @@
 | `db/schema.sql` | مخطط Neon (`nahwa_sync` + `nahwa_users`) — يُنشأ تلقائيًا |
 | `.github/workflows/ci.yml` | على كل push: تثبيت → فحص الأنواع → بناء → الاختبارات → تقرير |
 
+### 4.1) سياسة حل المزودات — `Provider Resolution Policy` ⭐
+
+سياسة موثّقة ومُطبّقة في `lib/ai/index.ts` (وليس مجرد قاعدة في التوثيق) — أي مزود جديد (OpenRouter/Cerebras/Mistral...) يتبع نفس السلسلة دون تعديلها:
+
+```
+ProviderResolutionPolicy
+
+1. المزود/النموذج المطلوب صراحةً (modelId "provider:model")
+2. اعتماد مفتاح بيئة الخادم (Vercel) للطلب المباشر
+3. اعتماد مفتاح المتصفح BYOK (يتقدّم على البيئة في الجلسة — مقطوع 300 حرف)
+4. تراجع تلقائي حسب الأولوية العامة: Groq → Gemini → HF
+5. demo fallback (آخر خطوة — لا يفشل الطلب ضمن الظروف المدعومة)
+6. إصدار بيانات المزود فعليًا للعميل: حدث SSE {provider} دائمًا
+7. تدقيق داخلي آمن للأسباب: [nawah][provider-fallback] (لا مفاتيح، لا محتوى مستخدم)
+```
+
+> **استثناءان مقصودان:** `demo` لا يتراجع (يُختار عمدًا) · `search` لا يتراجع إلى demo (يبث خلاصة أو خطأً واضحًا — لا تضليل).
+
+### 4.2) سياسة مفتاح المتصفح — `BYOK Client Key Policy` 🔐
+
+يصل `apiKey` من المتصفح إلى طبقة المزود فقط، والصيغة الرسمية المطبّقة:
+
+```
+client apiKey
+→ تحقق الصيغة (إزالة الفراغات + قص 300 + رفض محارف التحكم → 400)
+→ لا يُخزَّن خادميًا إطلاقًا (لا DB، لا ملف)
+→ لا يُسجَّل في السجلات (لا console يمرره؛ سجل التدقيق يعرض السبب فقط)
+→ لا يظهر في رسائل الخطأ (تعقيم إجباري sanitizeError: يستبدل أي أثر بـ ***)
+→ لا يمر عبر أحداث SSE (الأحداث: provider / chunk / sources / done / error المعقّم فقط)
+→ يُمرَّر لنداء المزود حصرًا
+```
+
+> **الإثبات في الكود:** `sanitizeError(err, resolved.apiKey, outKey)` في `app/api/chat/route.ts` + `console.warn("[nawah][provider-error]", {provider, reason: معقّم})` + استبعاد المحارف التحكمية (منع حقن الترويسات). الاقتطاع (300 حرف) إجراء أمان إضافي — وليس بديلًا عن عدم التسجيل/التسريب.
+
 ---
 
 ## 5) المهام الوظيفية الرئيسية
@@ -136,7 +170,7 @@
 | # | المهمة | كيف تعمل | الحالة الحية |
 |---|---|---|---|
 | 1 | **محادثة ذكية عربية** | `POST /api/chat` → بث SSE؛ يدعم Markdown + تظليل كود | ✅ تعمل |
-| 2 | **تراجع تلقائي** | مزود بلا مفتاح/فشل → المزود التالي → `demo` — لا رسالة خطأ للمستخدم | ✅ تعمل |
+| 2 | **تراجع تلقائي** | يحاول النظام تزويد الرد عبر fallback إلى `demo` عند فشل المزود أو غياب المفتاح، ضمن نطاق الأخطاء المدعومة (وفق سياسة 4.1) | ✅ تعمل |
 | 3 | **4 مزودات + بحث** | Gemini · Groq · HuggingFace · Tavily(بحث بمصادر) · demo | ✅ **كلها مفعّلة حيًا** `{gemini,hf,groq,search:true}` |
 | 4 | **حسابات وأجهزة** | Auth.js v5؛ دخول بريد/كلمة مرور + Google (مفعّل حيًا) + GitHub (اختياري)؛ مزامنة عبر `user:<id>` | ✅ بريد/كلمة مرور + Google OAuth؛ GitHub بانتظار مفاتيحك |
 | 5 | **مزامنة عبر الأجهزة** | `nahwa_sync` في Neon؛ الزائر → `device:<id>`، المسجّل → `user:<id>` | ✅ مثبتة (جهازان قرآ نفس المحادثة) |
@@ -171,7 +205,9 @@ AuthModal (تبويب دخول/تسجيل) → POST /api/auth/register (تسجي
 زر «المتابعة عبر Google» → POST /api/auth/signin/google + CSRF
   → 302 إلى accounts.google.com (client_id + redirect_uri مسجّلا + PKCE)
   → موافقة المستخدم → /api/auth/callback/google
-  → تبادل الكود (invalid_grant اختبارًا يُثبت صحة السر) → upsert في nahwa_users → جلسة
+  → تبادل الكود → upsert في nahwa_users → جلسة
+مُلاحظة دقة: اختبار الكود الوهمي (invalid_grant) يُثبت "تكوين سليم" (Configuration PASS)
+           وليس نجاح end-to-end — الإثبات الحاسم تسجيل دخول حقيقي من متصفح المستخدم.
 ```
 
 ### تدفق المزامنة
@@ -300,17 +336,46 @@ git push origin main → GitHub (CI: يبني ويختبر) → Vercel (نشر �
 
 ---
 
-## 15) الحالة الراهنة (2026-08-29 — مثبتة حيًا)
+## 15) الحالة الراهنة — `RELEASE STATUS` (2026-08-29)
 
-| القدرة | الحالة |
-|---|---|
-| ذكاء (Gemini/Groq/HF) + بحث (Tavily) | ✅ `{gemini, huggingface, groq, search: true}` |
-| محادثة عربية بث + تظليل + داكن | ✅ |
-| حسابات بريد/كلمة مرور + مزامنة | ✅ (جهازان) |
-| **Google OAuth** | ✅ المزود مفعّل حيًا + سرّ مقبول من Google (`invalid_grant` عند كود وهمي = تكوين سليم) — **الخطوة الأخيرة: تسجيل دخول من متصفح المستخدم** |
-| GitHub OAuth | ⏳ اختياري: أضف `AUTH_GITHUB_ID/SECRET` → يظهر الزر تلقائيًا |
-| Upstash (حماية مشتركة) | ⏳ اختياري: `UPSTASH_REDIS_REST_URL/TOKEN` |
-| الاختبارات / CI / المستودع | ✅ 24/24 · success · نظيف بلا أسرار |
+```
+NAWAH AI — RELEASE STATUS
+────────────────────────────────────────
+Core Chat                  PASS
+SSE Streaming              PASS
+Demo Provider              PASS
+Gemini                     PASS
+Groq                       PASS
+HuggingFace                PASS
+Web Search / Tavily        PASS
+BYOK                       PASS
+LocalStore                 PASS
+Neon Sync                  PASS
+Credentials Auth           PASS
+Google OAuth Config        PASS   ← الإعداد مُثبت (المزود ظاهر + السر مقبول من Google)
+Google OAuth E2E           PENDING USER TEST   ← يتطلب تسجيل دخول حقيقي من المتصفح
+GitHub OAuth               OPTIONAL / NOT CONFIGURED
+Rate Limit                 PASS
+CI                         PASS
+Secrets Hygiene            PASS
+Production Deployment      PASS
+Documentation              PASS
+────────────────────────────────────────
+OVERALL                   READY / E2E AUTH PENDING
+```
+
+**الفرق الجوهري في الصياغة (يُحترم دائمًا):**
+
+| المصطلح | المعنى | ما لا يثبته |
+|---|---|---|
+| **Configuration PASS** | المزود مفعّل + بيان Google «invalid_grant» (عميل/سر/redirect مقبولة) + التدفق يصل accounts.google.com | لا يثبت callback → upsert → جلسة |
+| **E2E PASS** | تسجيل دخول حقيقي من متصفح → callback → جلسة → حساب في `nahwa_users` → مزامنة `user:<id>` | — (يُعلن فقط بعد الاختبار الفعلي) |
+
+**متبقٍ للتحويل:**
+- `Google OAuth E2E` → **PASS** بعد نجاح تسجيل الدخول من المتصفح (خطوة بيد المستخدم — تتطلب حساب Google).
+- `GitHub OAuth` → اختياري: `AUTH_GITHUB_ID/SECRET` ثم إثبات بنفس النمط.
+- `Upstash` → اختياري: `UPSTASH_REDIS_REST_URL/TOKEN` (حماية مشتركة متعددة الخوادم).
+- الاختبارات: 24/24 · CI: success · المستودع نظيف بلا أسرار (فحص كامل تاريخ Git).
 
 ---
 

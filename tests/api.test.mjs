@@ -230,6 +230,19 @@ test("إرسال مفتاح من لوحة المتصفح (apiKey) يفعّل ا�
 });
 
 // ─────────── 10) حماية الحدود (Rate Limit) — يُشغَّل أخيرًا لأنه يستهلك الحصة ───────────
+test("مفتاح BYOK بمحارف تحكم → 400 (سياسة صيغة المفتاح لا يمر)", async () => {
+  const res = await fetch(`${BASE}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages: [{ role: "user", content: "مرحبا" }],
+      modelId: "demo",
+      apiKey: "gsk_clave\ncon_salto\rde_linea",
+    }),
+  });
+  assert.equal(res.status, 400);
+});
+
 test("تجاوز حد الرسائل يعيد 429 برسالة واضحة وترويسات الحماية", async () => {
   const statuses = [];
   for (let i = 0; i < 25; i++) {
@@ -301,3 +314,4 @@ test("POST /api/auth/register كلمة مرور قصيرة → 400", async () =>
   });
   assert.equal(res.status, 400);
 });
+

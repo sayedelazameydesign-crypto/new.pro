@@ -49,10 +49,15 @@ export function resolveProvider(modelId: string, overrideKey?: string): {
   // 2) تراجع تلقائي حسب الأولوية العامة: Groq → Gemini → HF
   for (const p of ["groq", "gemini", "huggingface"] as const) {
     const alt = pick(FALLBACKS[p].model, p);
-    if (alt) return alt;
+    if (alt) {
+      // تدقيق داخلي آمن: سبب التراجع فقط (بلا مفاتيح وبلا محتوى مستخدم)
+      console.warn("[nawah][provider-fallback]", { requested: provider, reason: "no-credential", resolved: alt.provider });
+      return alt;
+    }
   }
 
-  // 3) لا يوجد أي مفتاح → وضع العرض التجريبي (لا يفشل أبدًا)
+  // 3) لا يوجد أي مفتاح → وضع العرض التجريبي
+  console.warn("[nawah][provider-fallback]", { requested: provider, reason: "no-credential-at-all", resolved: "demo" });
   return { provider: "demo", model: "demo", apiKey: "" };
 }
 
@@ -64,6 +69,18 @@ function pick(
   if (!key) return null;
   const apiKey = process.env[key];
   return apiKey ? { provider: p, model, apiKey } : null;
+}
+
+/**
+ * تعقيم رسائل الخطأ: يحذف أي أثر للمفاتيح الحساسة قبل وصولها للعميل أو السجل.
+ * السياسة: مفتاح المتصفح (BYOK) — لا يُسجَّل، لا يُخزَّن، لا يظهر في أخطاء، لا يمر عبر SSE.
+ */
+export function sanitizeError(err: unknown, ...secrets: (string | undefined)[]): string {
+  let msg = err instanceof Error ? err.message : "حدث خطأ غير متوقع من مزود الذكاء — حاول بعد قليل.";
+  for (const s of secrets) {
+    if (s && s.length >= 8) msg = msg.split(s).join("***");
+  }
+  return msg.slice(0, 400);
 }
 
 export async function* streamReply(opts: {

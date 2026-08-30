@@ -2,7 +2,7 @@
 // يدعم Groq وGemini وHugging Face ووضع العرض بتراجع تلقائي — لا يفشل أبدًا.
 
 import { NextRequest } from "next/server";
-import { streamReply, resolveProvider } from "@/lib/ai";
+import { streamReply, resolveProvider, sanitizeError } from "@/lib/ai";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -74,9 +74,18 @@ export async function POST(req: NextRequest) {
   const desiredModelId =
     typeof body.modelId === "string" && body.modelId ? body.modelId : "gemini:gemini-2.5-flash";
 
-  // مفتاح مُرسل من لوحة المتصفح — يتقدّم على بيئة الخادم في هذه الجلسة
-  const overrideKey = typeof body.apiKey === "string" ? body.apiKey.trim().slice(0, 300) : "";
-  const resolved = resolveProvider(desiredModelId, overrideKey || undefined);
+  // مفتاح مُرسل من لوحة المتصفح (BYOK) — يتقدّم على بيئة الخادم في هذه الجلسة.
+  // سياسة الأمان: لا يُخزَّن خادميًا، لا يُسجَّل، لا يظهر في أخطاء أو أحداث SSE،
+  // ويُرفض إن احتوى محارف تحكم (يمنع حقن الترويسات).
+  const outKey =
+    typeof body.apiKey === "string" ? body.apiKey.trim().slice(0, 300) : "";
+  if (/[\u0000-\u001f\u007f]/.test(outKey)) {
+    return Response.json(
+      { error: "المفتاح غير صالح — أزل الأسطر الجديدة وأعد اللصق" },
+      { status: 400 }
+    );
+  }
+  const resolved = resolveProvider(desiredModelId, outKey || undefined);
 
   const system = typeof body.system === "string" ? body.system : "";
   const maxTokens = Math.min(2048, Number(process.env.MAX_TOKENS) || 1024);
@@ -110,10 +119,11 @@ export async function POST(req: NextRequest) {
         if (!aborted) send({ done: true });
       } catch (err) {
         if (!aborted) {
-          send({
-            error:
-              err instanceof Error ? err.message : "حدث خطأ غير متوقع من مزود الذكاء — حاول بعد قليل.",
-          });
+          // تعقيم إجباري: لا يصل أي أثر للمفاتيح إلى العميل عبر SSE
+          const safeMsg = sanitizeError(err, resolved.apiKey, outKey);
+          // تدقيق داخلي آمن (بلا مفاتيح وبلا محتوى مستخدم)
+          console.warn("[nawah][provider-error]", { provider: resolved.provider, reason: safeMsg.slice(0, 120) });
+          send({ error: safeMsg });
         }
       } finally {
         req.signal.removeEventListener("abort", abortHandler);
