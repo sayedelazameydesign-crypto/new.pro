@@ -59,6 +59,8 @@ npm run dev
 
 
 
+> 🧊 **BASELINE المجمّد:** `auth-baseline` → `289c7f5` (AUTH HARDENED / FINAL) — انظر [BASELINE.md](BASELINE.md)
+
 ## 🔑 لوحة إدخال المفاتيح (BYOK — تعمل فورًا من المتصفح)
 
 من **الإعدادات → المفاتيح المجانية** يمكنك لصق مفتاحك الخاص (Gemini / Groq / HF / Tavily):
