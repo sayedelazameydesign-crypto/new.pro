@@ -33,3 +33,9 @@ jobs:
           EXIT=$?
           kill %1 2>/dev/null || true
           exit $EXIT
+
+      - name: تثبيت متصفح Playwright (E2E)
+        run: npx playwright install --with-deps chromium
+
+      - name: تشغيل E2E (إرسال / حذف / إعدادات)
+        run: npx playwright test

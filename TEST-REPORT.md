@@ -1,7 +1,7 @@
 # تقرير الاختبارات — نواة AI
 
-> آخر تحديث: جولة 17 (Phase 6/Item 3 — مشاركة المحادثة ?c=id)
-> النتيجة الكاملة: **148/148 ✅** — lint 0/0 · typecheck نظيف · build ✓ · تحقق حي 16/16
+> آخر تحديث: جولة 18 (Phase 6/Item 4 — E2E Playwright: إرسال/حذف/إعدادات)
+> النتيجة الكاملة: **Unit/Integration 148/148 ✅ · E2E 15/15 ✅** — lint 0/0 · typecheck نظيف · build ✓
 
 ---
 
@@ -47,6 +47,26 @@ npm run typecheck # نظيف
 npm run build     # ✓ Compiled successfully (6/6 صفحات)
 npm test          # 120/120 ✅
 ```
+
+---
+
+## الجولة 18 — Phase 6/Item 4: تغطية E2E (Playwright)
+
+| البند | النتيجة |
+|---|---|
+| Playwright (config + tests/e2e/) | ✅ DEV ONLY tooling |
+| E2E-1..E2E-15 (App Load/إرسال/عربي/Enter/فارغ/تحميل/إنشاء/حذف نشطة/حذف غير نشطة/إلغاء حذف/إعدادات/تغيير/استمرارية/refresh/عزل) | ✅ **15/15** |
+| Unit + Integration (خادم جديد) | ✅ **148/148** |
+| lint / typecheck / build | ✅ 0/0 · نظيف · ✓ |
+| أمان/خصوصية | ✅ لا أسرار، لا بيانات إنتاجية، trace/screenshot محلية، no-رفع خارجي |
+| Dependency Review | ✅ **NO NEW RUNTIME DEPENDENCY** (Playwright كان DEV ONLY) |
+
+### ما أُنجز
+- `playwright.config.ts`: webServer على 3100 (منفصل عن 3000)، chromium، trace retain-on-failure، RATE_LIMIT_DISABLED في بيئة الاختبار فقط.
+- `tests/e2e/core-flows.spec.ts`: 15 اختبارًا مستقلاً (سياق معزول لكل اختبار) بلا LLM خارجي (وضع demo المحلي) — selectors عبر getByRole/getByText.
+- `aria-label="إغلاق"` لزر إغلاق الإعدادات (وصولية — مسموح ومطلوب لاختيار دلالي).
+- CI: خطوتان (install chromium + npx playwright test). `.gitignore`: test-results/playwright-report.
+- إصلاحات أثناء E2E (محددات فقط، لا منتج): العنوان المقصوص في القائمة، الحفظ يُغلق النافذة تلقائيًا، زر الحفظ المتعدد (أزرار المفاتيح).
 
 ---
 

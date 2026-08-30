@@ -41,7 +41,7 @@ export default function SettingsModal({ settings, status, t, onSave, onClose, on
         {/* الرأس */}
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-[var(--border)] sticky top-0 bg-[var(--card)] z-10">
           <h2 className="font-black text-lg">{t("settings")}</h2>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--bg)]">
+          <button onClick={onClose} aria-label={t("close")} className="p-2 rounded-xl hover:bg-[var(--bg)]">
             <X size={18} />
           </button>
         </div>

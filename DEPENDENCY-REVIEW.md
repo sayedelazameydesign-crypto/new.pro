@@ -107,3 +107,17 @@
 - **لا مكتبة مشاركة** (نحن لا نرسل أي شيء — الرابط رمزي محلي).
 - **لا مكتبة clipboard** (native + fallback كافٍ؛ مُثبت حيًا بقراءة الحافظة الفعلية).
 - **لا endpoint عام جديد** — الحفاظ على Privacy Model: **local-only identifier** (راجع PHASE6-ITEM3-AUDIT.md §8).
+
+## 7) Item 4 (تغطية E2E — Playwright) — تحديث
+
+> **NO NEW RUNTIME DEPENDENCY** — Playwright كان موجودًا منذ خطة Core Stack كـDEV ONLY.
+
+| الحزمة | التصنيف | أثر runtime | السبب |
+|---|---|---|---|
+| @playwright/test ^1.62.1 | **DEV ONLY** | NONE (لا يُستورد في أي كود تطبيق؛ أداة اختبار فقط) | فحص E2E على مستوى المتصفح (إرسال/حذف/إعدادات) |
+| chromium (browser binaries) | DEV ONLY (محرك محلي/CI) | NONE | لا تُحمل وقت التشغيل؛ تُثبَّت عبر `npx playwright install --with-deps chromium` في CI |
+
+- `playwright.config.ts` + `tests/e2e/core-flows.spec.ts` — tooling فقط.
+- لا مكتبة clipboard/شبكة جديدة؛ Selectors عبر getByRole/getByText مع إضافة `aria-label="إغلاق"` واحدة (وصولية) — لا data-testid.
+- الحتمية: وضع demo المحلي (بلا مفاتيح) — اختبارات بلا LLM خارجي، بلا أسرار، بلا بيانات حقيقية.
+- `RATE_LIMIT_DISABLED=1` يُفعَّل في بيئة الاختبار فقط (webServer) — متغير موجود أصلًا موثق «للاختبارات المحلية فقط».

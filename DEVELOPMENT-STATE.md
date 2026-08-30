@@ -4,9 +4,9 @@
 
 ```text
 BASELINE            auth-baseline -> 289c7f5   (AUTH HARDENED / FINAL — محمي، غير قابل للإزاحة)
-CURRENT_CHECKPOINT  هذا الـcommit — المرحلة 6/Item 3: مشاركة المحادثة ?c=id
-                   (lib/share.ts + زر Share2 + Toast + not-found) — 148/148 + حي 16/16
-                   HEAD السابق 53384b3 (Item 2) — Item 3 مغلق بالكامل
+CURRENT_CHECKPOINT  هذا الـcommit — المرحلة 6/Item 4: E2E Playwright (إرسال/حذف/إعدادات)
+                   (playwright.config.ts + tests/e2e/core-flows.spec.ts 15/15 + CI خطوة E2E)
+                   HEAD السابق a63011f (Item 3) — Item 4 مغلق بالكامل
 
 STATUS_MATRIX
   - 5.1 = PASS            (قراءة ملفات — مثبتة حيًا)
@@ -27,6 +27,9 @@ COMPLETED
   - التذكّر (5.4): lib/summary.ts — عتبة 24 رسالة → ملخص عربي → Conversation.summary
     (يُزامن عبر Neon) → يُحقن في system → يصل فعليًا للمزودات (كان خللًا كامنًا أُصلح)
   - المرحلة 6/1 — PWA: manifest RTL + sw.js (nawah-v1) + أيقونات RGBA + تسجيل SW + وسوم iOS
+  - Item 4 (المرحلة 6): E2E Playwright — 15 اختبارًا (إرسال/عربي/Enter/فارغ/تحميل/إنشاء/
+    حذف نشطة وغير نشطة/إلغاء/إعدادات/استمرارية/refresh/عزل سياقات) — DEV ONLY،
+    بلا LLM خارجي (وضع demo)، بلا أسرار، webServer منفصل 3100 + CI خطوات E2E
   - Item 3 (المرحلة 6): مشاركة رابط ?c=id — فتح محادثة محددة من الرابط (مرة واحدة بعد
     loadAll، بلا طلب جديد) + زر نسخ الرابط (Clipboard+fallback، Toast عبر zustand) +
     حالة not-found بلا محادثة عشوائية — NO NEW DEPENDENCY · Privacy: LOCAL-ONLY (موثق)
@@ -50,17 +53,17 @@ BLOCKED
   - Vercel CLI token                 = منتهي (لا يضر؛ النشر عبر git integration)
   - (بيئي عابر) حصة Gemini المجانية كانت 429 أثناء جولة التحقق — لا أثر على النتائج
 
-TEST_STATUS        148/148 PASS (136 سابقة + 12 مشاركة S-1..S-12) — lint 0/0
-                   · typecheck نظيف · build ✓ (6/6) · تحقق حي 16/16 (متصفح حقيقي)
+TEST_STATUS        Unit/Integration 148/148 · E2E 15/15 (Playwright chromium)
+                   · lint 0/0 · typecheck نظيف · build ✓ (6/6)
 CI_STATUS          PASS (45591b4 — آخر دفعة؛ 56f2af1 و229b1e7 success سابقًا)
 DEPLOYMENT_STATUS   LIVE — https://new-pro-kohl.vercel.app (يخدم 45591b4؛ دليل: 30 رسالة
                    + temp=99 → 200 عبر /api/chat الحي = تسامح zod منشور)
 SECURITY_STATUS    No secret leakage (git grep قبل/بعد كل دفع نظيف — مفاتيح الاختبارات وهمية
                    معلومة) · BYOK/صلاحيات/بنية لم تُمس
 
-NEXT_SAFE_ACTION   المرحلة 6 — بند 4: اختبارات E2E Playwright (إرسال، حذف، تغيير إعدادات)
-                   ثم التحسينات ثم الذكاء — بالترتيب الدقيق من ROADMAP؛
-                   كل بند يُغلق باختبارات + CI + دفع
+NEXT_SAFE_ACTION   المرحلة 6 — بند 5: تحسينات (اختصارات لوحة مفاتيح، سحب الملفات للإدخال،
+                   وضع ملء الشاشة) ثم بند 6: ذكاء (اقتراح استكمال، عنوان أفضل) —
+                   بالترتيب الدقيق من ROADMAP؛ كل بند يُغلق باختبارات + CI + دفع
 ```
 
-<!-- تحديث: 2026-08-30 · المرحلة 6/Item 3: مشاركة ?c=id (148/148 + حي 16/16) · هذا الـcommit -->
+<!-- تحديث: 2026-08-30 · المرحلة 6/Item 4: E2E (148/148 + 15/15) · هذا الـcommit -->

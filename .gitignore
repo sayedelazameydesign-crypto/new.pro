@@ -16,3 +16,7 @@ next-env.d.ts
 *.tsbuildinfo
 .DS_Store
 npm-debug.log*
+
+# Playwright (Item 4) — artifacts محلية فقط، لا تُدفع
+/test-results/
+/playwright-report/
