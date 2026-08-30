@@ -1,9 +1,10 @@
 // ===== توليد الصور — المرحلة 5.2 (ROADMAP): FLUX.1-schnell عبر Hugging Face =====
-// مجاني بالكامل (شريحة HF). النمط مطابق لمزود HF النصي: router أولًا ثم classic كتراجع.
+// «مجاني بالكامل عبر حساب HF»: Inference Providers يدير النموذج عبر مزودين
+// (fal-ai / wavespeed / nscale …) — نجرّب بالترتيب ثم entrypoint الكلاسيكي.
 // أمان: لا حفظ على القرص · لا تسجيل للمفتاح · رسائل خطأ عربية معقّمة (بلا أي أثر للمفتاح).
 
 const MODEL_ID = "black-forest-labs/FLUX.1-schnell";
-const ROUTER_URL = `https://router.huggingface.co/hf-inference/models/${MODEL_ID}`;
+const PROVIDERS = ["fal-ai", "wavespeed", "nscale", "hf-inference"] as const;
 const CLASSIC_URL = `https://api-inference.huggingface.co/models/${MODEL_ID}`;
 
 export const IMAGE_PROMPT_MAX = 800;
@@ -27,6 +28,8 @@ function hfError(status: number, body: string): string {
       return "الحساب لا يملك صلاحية توليد الصور — فعّل «Inference Providers» من إعدادات حساب Hugging Face (مجاني) ثم أعد المحاولة";
     case 404:
       return "نموذج الصور غير متاح حاليًا — أعد المحاولة بعد قليل";
+    case 410:
+      return "النموذج غير مدعوم لدى هذا المزود — جرّب لاحقًا أو خيارًا آخر";
     case 429:
       return "تجاوزت حصة توليد الصور — انتظر قليلًا ثم أعد المحاولة";
     case 503:
@@ -50,6 +53,7 @@ async function toImage(res: Response): Promise<Uint8Array> {
 
 async function tryProvider(
   url: string,
+  netErr: string,
   headers: Record<string, string>,
   body: string,
   fetcher: typeof fetch
@@ -58,7 +62,7 @@ async function tryProvider(
   try {
     r = await fetcher(url, { method: "POST", headers, body });
   } catch {
-    return { err: url === ROUTER_URL ? "HF_ROUTER_NET" : "HF_CLASSIC_NET" };
+    return { err: netErr };
   }
   if (r.ok) {
     try {
@@ -71,10 +75,22 @@ async function tryProvider(
   return { err: hfError(r.status, await r.text().catch(() => "")) };
 }
 
+/** أولوية الرسالة الأكثر تشخيصًا (حصة ← تفعيل ← مفتاح ← غير مدعوم ← عام) */
+function priority(msg: string): number {
+  if (msg.includes("الحصة")) return 1;
+  if (msg.includes("فعّل")) return 2;
+  if (msg.includes("مفتاح Hugging Face")) return 3;
+  if (msg.includes("غير مدعوم")) return 4;
+  if (msg.includes("استجابة")) return 5;
+  if (msg.startsWith("Hugging Face")) return 6;
+  return 9; // عام أو شبكة
+}
+
 /**
- * توليد صورة من وصف نصي عبر FLUX.1-schnell.
+ * توليد صورة من وصف نصي عبر FLUX.1-schnell (HF Inference Providers).
  * fetcher قابلة للحقن (للاختبارات) — الافتراضي fetch.
- * المسار: router أولًا، فإن فشل → classic، ثم تحويل أي فشل إلى رسالة عربية واضحة.
+ * المسار: مزودون بالترتيب (fal-ai → wavespeed → nscale → hf-inference) ثم classic،
+ * وعند الفشل الكلي تُعرض الرسالة الأكثر تشخيصًا.
  */
 export async function generateImage(
   prompt: string,
@@ -91,18 +107,26 @@ export async function generateImage(
   const headers = { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" };
   const body = JSON.stringify({ inputs: p });
 
-  const router = await tryProvider(ROUTER_URL, headers, body, fetcher);
-  if ("bytes" in router) return router;
+  const errs: string[] = [];
+  for (const prov of PROVIDERS) {
+    const r = await tryProvider(
+      `https://router.huggingface.co/${prov}/models/${MODEL_ID}`,
+      `NET_${prov}`,
+      headers,
+      body,
+      fetcher
+    );
+    if ("bytes" in r) return r;
+    errs.push(r.err ?? "");
+  }
 
-  // تراجع: endpoint الكلاسيكي (نفس نمط مزود HF النصي)
-  const classic = await tryProvider(CLASSIC_URL, headers, body, fetcher);
+  // آخر خيار: entrypoint الكلاسيكي (قد يعمل لنماذج قديمة)
+  const classic = await tryProvider(CLASSIC_URL, "NET_CLASSIC", headers, body, fetcher);
   if ("bytes" in classic) return classic;
+  errs.push(classic.err ?? "");
 
-  // كلاهما فشل: الاختيار الأكثر تشخيصًا (classic يسبق router) — أخطاء الشبكة تُستبدل برسالة عامة
-  const a = router.err ?? "";
-  const b = classic.err ?? "";
-  const msg =
-    [b, a].find((x) => x && x !== "HF_ROUTER_NET" && x !== "HF_CLASSIC_NET") ||
-    "تعذر الاتصال بخدمة توليد الصور";
-  throw new Error(msg);
+  const real = errs.filter((x) => x && !x.startsWith("NET_"));
+  if (!real.length) throw new Error("تعذر الاتصال بخدمة توليد الصور");
+  const best = real.sort((a, b) => priority(a) - priority(b))[0];
+  throw new Error(best);
 }
