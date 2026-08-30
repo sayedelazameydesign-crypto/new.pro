@@ -201,7 +201,8 @@ syncScope = user:<canonicalUserId>
 | 3 | **4 مزودات + بحث** | Gemini · Groq · HuggingFace · Tavily(بحث بمصادر) · demo | ✅ **كلها مفعّلة حيًا** `{gemini,hf,groq,search:true}` |
 | 4 | **حسابات وأجهزة** | Auth.js v5؛ دخول بريد/كلمة مرور + Google (مفعّل حيًا) + GitHub (اختياري)؛ مزامنة عبر `user:<id>` + **Provisioning إلزامي لكل طرق الدخول** | ✅ بريد/كلمة مرور + Google OAuth + طبقة هوية (4.3)؛ GitHub بانتظار مفاتيحك |
 | 5 | **مزامنة عبر الأجهزة** | `nahwa_sync` في Neon؛ الزائر → `device:<id>`، المسجّل → `user:<canonicalUserId>` | ✅ مثبتة (جهازان قرآ نفس المحادثة) |
-| 5.2 | **توليد الصور (FLUX)** | `POST /api/image` → FLUX.1-schnell عبر HF (router→classic) → يُعرض في المحادثة؛ حد 10/دقيقة + BYOK لمفتاح HF + تعقيم أخطاء | ✅ منفذة (زر 🎨، 9 اختبارات وحدة + 3 API) |
+| 5.2 | **توليد الصور (FLUX)** | `POST /api/image` → سلسلة مرشحين عبر HF Inference Providers (Krea-dev/Qwen-Image/Hyper-SD/SDXL عبر fal-ai→wavespeed→replicate→nscale→classic) → يُعرض في المحادثة؛ حد 10/دقيقة + BYOK لمفتاح HF + تعقيم أخطاء | ⏸️ **IMPLEMENTED — LIVE BLOCKED → DEFERRED** (كود + 9 اختبارات + CI أخضر؛ حساب HF بلا مزود صور مفعّل — يُستأنف بعد التفعيل) |
+| 5.3 | **الصوت (Web Speech API)** | واجهة فقط بلا خادم: 🎤 إملاء (SpeechRecognition) + 🔊 قراءة الردود (speechSynthesis) مع تنظيف Markdown وتقسيم المقاطع واختيار صوت عربي — `lib/speech.ts` | ✅ **PASS — مثبتة حيًا** (زر 🎤 بدأ الاستماع فعلًا + زر 🔊 على رد المساعد + 9 اختبارات) |
 | 5.1 | **قراءة الملفات المرفقة** | مرفقات TXT/MD/CSV/JSON/PDF/DOCX → استخراج نص (pdf-parse + mammoth، مفتوحان) → دمج في رسالة المستخدم الأخيرة → رؤية المزود له | ✅ منفذة (زر 📎، حد 3×1MB، 10 اختبارات استخراج) |
 | 6 | **حماية الحدود** | 20 رسالة/دقيقة + 60 مزامنة/دقيقة، `429` + ترويسات `X-RateLimit-*`؛ Upstash اختياري لمشاركة الحدود | ✅ `memory` فعّال (Upstash اختياري) |
 | 7 | **لوحة مفاتيح BYOK** | من ⚙️ الإعدادات: أي زائر يلصق مفتاحه في المتصفح → تفعيل فوري دون لمس Vercel | ✅ مثبتة حيًا |
@@ -322,7 +323,7 @@ nahwa_users(
 ```
 npm run typecheck   → tsc --noEmit
 npm run build       → next build
-npm test            → 63/63 (25 API + 12 هوية + 2 سباق + 10 استخراج + 2 مرفقات API + 9 صور + 3 صور API)
+npm test            → 72/72 (30 API + 12 هوية + 2 سباق + 10 استخراج ملفات + 9 صور + 9 صوت)
 npm run check:keys  → تشخيص المزودات
 ```
 
