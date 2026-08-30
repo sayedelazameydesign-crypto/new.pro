@@ -54,6 +54,7 @@ export const DEFAULTS_SETTINGS: Settings = {
   temperature: 0.7,
   theme: "dark",
   lang: "ar",
+  smartTitle: true, // CR-006: العنوان الذكي مفعّل افتراضيًا
 };
 
 export function newConversation(): Conversation {

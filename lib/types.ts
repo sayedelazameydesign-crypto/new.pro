@@ -25,6 +25,8 @@ export interface Settings {
   temperature: number; // 0 .. 1.5
   theme: "dark" | "light";
   lang: "ar" | "en";
+  /** CR-006: عنوان ذكي من أول رسالة (افتراضي ON — قابل للإيقاف في الإعدادات). خياري للتوافق الرجعي مع مزامنة أقدم. */
+  smartTitle?: boolean;
 }
 
 export interface ProviderStatus {

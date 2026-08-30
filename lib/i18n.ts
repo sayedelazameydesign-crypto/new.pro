@@ -6,6 +6,8 @@ const dict: Record<Lang, Record<string, string>> = {
   ar: {
     appName: "نواة AI",
     appTagline: "ذكاء مجاني · بلا فيزا · مفتوح المصدر",
+    smartTitle: "العناوين الذكية (AI)", // CR-006
+    smartTitleHint: "اقتراح عنوان أوضح للمحادثة من أول رسالتك (يُرسل نص الرسالة الأولى فقط لنفس المزود — يمكنك إيقافه).", // CR-006
     newChat: "محادثة جديدة",
     searchPlaceholder: "ابحث في المحادثات…",
     noResults: "لا توجد نتائج",
@@ -141,6 +143,8 @@ const dict: Record<Lang, Record<string, string>> = {
   en: {
     appName: "Nawah AI",
     appTagline: "Free AI · No credit card · Open source",
+    smartTitle: "Smart titles (AI)", // CR-006
+    smartTitleHint: "Suggest a clearer conversation title from your first message (only the first message text is sent to the same provider — you can turn it off).", // CR-006
     newChat: "New chat",
     searchPlaceholder: "Search conversations…",
     noResults: "No results",

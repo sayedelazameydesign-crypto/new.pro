@@ -41,6 +41,7 @@ import AuthModal from "./components/AuthModal";
 import { getModel, splitModelId } from "@/lib/models";
 import { getKey, PROVIDER_TO_KEY } from "@/lib/keys";
 import { makeT } from "@/lib/i18n";
+import { cleanSource, clientRequestIntel, firstUserMessageContent } from "@/lib/intel";
 import {
   DEFAULT_SPEECH_LANG,
   ambientSpeechApi,
@@ -339,6 +340,42 @@ export default function Home() {
     [settings, update, t]
   );
 
+  // ===== CR-006 (Item 6): عنوان ذكي بعد أول رسالة — لا يحجب البث، صامت عند الفشل =====
+  // العقد: قاعدتا «بلا محادثة كاملة» (الخصوصية A) و«بلا كسر لإعادة تسمية يدوية».
+  const intelDoneRef = useRef<Set<string>>(new Set()); // نجح مرة واحدة فقط لكل محادثة
+  const intelBusyRef = useRef(false);
+  const ensureIntelTitle = useCallback(
+    async (convId: string, msgs: { role: string; content: string }[]) => {
+      if (settings.smartTitle === false) return; // مفتاح الإيقاف المعتمد
+      if (intelDoneRef.current.has(convId) || intelBusyRef.current) return;
+      const userCount = msgs.filter((m) => m.role === "user").length;
+      if (userCount < 1 || userCount > 2) return; // عند أول رسالة (وإعادة محاولة عند الثانية فقط)
+      const source = cleanSource(firstUserMessageContent(msgs));
+      if (!source) return;
+      const modelId = settings.modelId;
+      const { provider } = splitModelId(modelId);
+      const keyName = provider ? PROVIDER_TO_KEY[provider] : undefined;
+      const apiKey = keyName ? getKey(keyName) : "";
+      intelBusyRef.current = true;
+      try {
+        const r = await clientRequestIntel({ modelId, source, lang: settings.lang, apiKey });
+        if (r.ok) {
+          intelDoneRef.current.add(convId);
+          // لا نكتب فوق عنوان أعاد المستخدم تسميته يدويًا (يقارن بالمحسوب الحالي)
+          update(convId, (c) =>
+            c.title === titleFromMessages(c.messages) ? { ...c, title: r.value } : c
+          );
+        }
+        // فشل → صمت (يبقى titleFromMessages)؛ يُعاد عند الإرسال التالي
+      } catch {
+        // صمت تام — لا رسالة خاطئة (العقد)
+      } finally {
+        intelBusyRef.current = false;
+      }
+    },
+    [settings.smartTitle, settings.modelId, settings.lang, update]
+  );
+
   // ===== إرسال رسالة جديدة =====
   const sendMessage = useCallback(
     async (text?: string) => {
@@ -379,9 +416,10 @@ export default function Home() {
 
       const history = nextConv.messages.map((m) => ({ role: m.role, content: m.content }));
       await run(nextConv, history, files, systemMsg);
+      void ensureIntelTitle(nextConv.id, nextConv.messages); // CR-006: عنوان ذكي (لا يحجب)
       setFiles([]);
     },
-    [active, input, files, streaming, createChat, update, run, settings.system]
+    [active, input, files, streaming, createChat, update, run, settings.system, ensureIntelTitle]
   );
 
   const stopStreaming = () => abortRef.current?.abort();
@@ -431,6 +469,7 @@ export default function Home() {
       ],
     };
     update(conv.id, () => nextConv);
+    void ensureIntelTitle(conv.id, nextConv.messages); // CR-006: أول رسالة → عنوان ذكي
     setActiveId(conv.id);
     setError(null);
 
@@ -470,7 +509,7 @@ export default function Home() {
       }));
       setError((err as Error).message || t("errorProvider"));
     }
-  }, [active, input, streaming, createChat, update, t]);
+  }, [active, input, streaming, createChat, update, t, ensureIntelTitle]);
 
   // ===== الصوت (المرحلة 5.3): إملاء + قراءة عبر Web Speech API — واجهة فقط، بلا خادم =====
   const [dictating, setDictating] = useState(false);
@@ -673,7 +712,7 @@ export default function Home() {
             </button>
             <div className="min-w-0">
               <div className="font-bold text-sm truncate">
-                {showChat ? titleFromMessages(active.messages) : t("appName")}
+                {showChat ? (active.title || titleFromMessages(active.messages)) : t("appName")}
               </div>
               <div className="text-[11px] text-[var(--muted)] flex items-center gap-1.5">
                 <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />

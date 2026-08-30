@@ -151,7 +151,7 @@ export default function Sidebar({
                       className="flex-1 min-w-0 bg-transparent outline-none border-b border-indigo-500 text-sm mx-1.5"
                     />
                   ) : (
-                    <span className="flex-1 min-w-0 truncate px-2">{titleFromMessages(c.messages)}</span>
+                    <span className="flex-1 min-w-0 truncate px-2">{c.title || titleFromMessages(c.messages)}</span>
                   )}
                   {editingId !== c.id && (
                     <span className="hidden group-hover:flex items-center gap-0.5">
@@ -160,7 +160,7 @@ export default function Sidebar({
                         onClick={(e) => {
                           e.stopPropagation();
                           setEditingId(c.id);
-                          setEditText(titleFromMessages(c.messages));
+                          setEditText(c.title || titleFromMessages(c.messages));
                         }}
                         className="p-1 rounded hover:bg-[var(--border)] text-[var(--muted)]"
                       >
