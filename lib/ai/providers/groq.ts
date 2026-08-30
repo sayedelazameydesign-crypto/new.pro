@@ -8,9 +8,13 @@ export async function* groqStream(
   opts: ProviderIO & { apiKey: string }
 ): AsyncGenerator<string> {
   const url = "https://api.groq.com/openai/v1/chat/completions";
+  const sys = opts.system?.trim();
   const body = {
     model: opts.model,
-    messages: opts.messages.map((m) => ({ role: m.role, content: m.content })),
+    messages:
+      sys && sys.length > 0
+        ? [{ role: "system", content: sys }, ...opts.messages.map((m) => ({ role: m.role, content: m.content }))]
+        : opts.messages.map((m) => ({ role: m.role, content: m.content })),
     temperature: opts.temperature ?? 0.7,
     max_tokens: opts.maxTokens ?? 1024,
     stream: true,

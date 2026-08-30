@@ -90,6 +90,7 @@ export async function* streamReply(opts: {
   apiKey: string;
   maxTokens: number;
   temperature?: number;
+  system?: string; // تعليمات النظام + ملخص التذكّر (المرحلة 5.4)
 }): AsyncGenerator<string> {
   const last = opts.messages[opts.messages.length - 1]?.content ?? "";
   switch (opts.provider) {
@@ -100,6 +101,7 @@ export async function* streamReply(opts: {
       yield* groqStream({
         model: opts.model,
         messages: opts.messages,
+        system: opts.system,
         apiKey: opts.apiKey,
         maxTokens: opts.maxTokens,
         temperature: opts.temperature,
@@ -109,6 +111,7 @@ export async function* streamReply(opts: {
       yield* geminiStream({
         model: opts.model,
         messages: opts.messages,
+        system: opts.system,
         apiKey: opts.apiKey,
         maxTokens: opts.maxTokens,
         temperature: opts.temperature,
@@ -118,6 +121,7 @@ export async function* streamReply(opts: {
       yield* huggingfaceStream({
         model: opts.model,
         messages: opts.messages,
+        system: opts.system,
         token: opts.apiKey,
         maxTokens: opts.maxTokens,
         temperature: opts.temperature,

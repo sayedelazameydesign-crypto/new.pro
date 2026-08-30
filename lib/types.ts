@@ -16,6 +16,7 @@ export interface Conversation {
   createdAt: number;
   updatedAt: number;
   messages: ChatMessage[];
+  summary?: string; // تذكّر (المرحلة 5.4): ملخص المحادثة الطويلة — يُزامن تلقائيًا
 }
 
 export interface Settings {

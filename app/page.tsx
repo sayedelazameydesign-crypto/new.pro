@@ -42,6 +42,7 @@ import {
 import { DEFAULTS_SETTINGS, LocalStore, newConversation, titleFromMessages } from "@/lib/storage";
 import { pullRemote, pushRemote, mergeConversations } from "@/lib/sync";
 import { copyText, uid } from "@/lib/utils";
+import { summarize, shouldSummarize, composeSystem } from "@/lib/summary";
 import type { ChatMessage, Conversation, ProviderStatus, Settings } from "@/lib/types";
 
 const store = new LocalStore();
@@ -177,7 +178,8 @@ export default function Home() {
     async (
       conv: Conversation,
       history: { role: string; content: string }[],
-      attachments?: { name: string; data: string }[]
+      attachments?: { name: string; data: string }[],
+      systemOverride?: string
     ) => {
       const asstId = uid();
       const asst: ChatMessage = { id: asstId, role: "assistant", content: "", createdAt: Date.now() };
@@ -205,7 +207,7 @@ export default function Home() {
           body: JSON.stringify({
             messages: history,
             modelId: settings.modelId,
-            system: settings.system,
+            system: systemOverride ?? settings.system,
             temperature: settings.temperature,
             ...(apiKeyOverride ? { apiKey: apiKeyOverride } : {}),
             ...(attachments?.length ? { files: attachments } : {}),
@@ -311,11 +313,23 @@ export default function Home() {
       };
       update(conv.id, () => nextConv);
 
+      // ===== التذكّر (المرحلة 5.4): عند طول المحادثة يُبنى ملخص تلقائي
+      // ويُخزَّن في المحادثة (يتزامن عبر Neon) ويكمل السياق بدل تكرار كل الرسائل =====
+      let summary = nextConv.summary ?? "";
+      let systemMsg = settings.system;
+      if (shouldSummarize(nextConv.messages)) {
+        summary = summarize(nextConv.messages);
+        if (summary) {
+          update(conv.id, (c) => ({ ...c, summary }));
+          systemMsg = composeSystem(settings.system, summary);
+        }
+      }
+
       const history = nextConv.messages.map((m) => ({ role: m.role, content: m.content }));
-      await run(nextConv, history, files);
+      await run(nextConv, history, files, systemMsg);
       setFiles([]);
     },
-    [active, input, files, streaming, createChat, update, run]
+    [active, input, files, streaming, createChat, update, run, settings.system]
   );
 
   const stopStreaming = () => abortRef.current?.abort();
@@ -677,6 +691,14 @@ export default function Home() {
             <Welcome t={t} onPick={sendMessage} onOpenSettings={() => setShowSettings(true)} />
           ) : (
             <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+              {active.summary && (
+                <details className="rounded-xl border border-indigo-500/25 bg-indigo-500/5 px-4 py-3 text-[12px] leading-relaxed text-[var(--muted)]">
+                  <summary className="cursor-pointer select-none font-medium">
+                    🧠 {t("remember")}
+                  </summary>
+                  <p className="mt-2 whitespace-pre-wrap text-[12px]">{active.summary}</p>
+                </details>
+              )}
               {active.messages.map((m, i) => (
                 <div
                   key={m.id}

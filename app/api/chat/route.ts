@@ -137,6 +137,7 @@ export async function POST(req: NextRequest) {
           apiKey: resolved.apiKey,
           maxTokens,
           temperature,
+          system,
         })) {
           if (aborted) break; // توقف فورًا عند إلغاء العميل
           send({ chunk });

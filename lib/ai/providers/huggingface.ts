@@ -8,9 +8,13 @@ import type { ProviderIO } from "./gemini";
 export async function* huggingfaceStream(
   opts: ProviderIO & { token: string }
 ): AsyncGenerator<string> {
+  const sys = opts.system?.trim();
   const payload = {
     model: opts.model,
-    messages: opts.messages.map((m) => ({ role: m.role, content: m.content })),
+    messages:
+      sys && sys.length > 0
+        ? [{ role: "system", content: sys }, ...opts.messages.map((m) => ({ role: m.role, content: m.content }))]
+        : opts.messages.map((m) => ({ role: m.role, content: m.content })),
     stream: true,
     temperature: opts.temperature ?? 0.7,
     max_tokens: opts.maxTokens ?? 1024,
