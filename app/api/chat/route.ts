@@ -1,8 +1,11 @@
 // ===== POST /api/chat — محادثة بتدفق نصي (streaming) =====
 // يدعم Groq وGemini وHugging Face ووضع العرض بتراجع تلقائي — لا يفشل أبدًا.
+// يدعم أيضًا «قراءة الملفات» (المرحلة 5): مرفقات TXT/MD/CSV/JSON/PDF/DOCX تُستخرج
+// نصوصها وتُدمج في رسالة المستخدم الأخيرة (قبل ترحيلها للمزود).
 
 import { NextRequest } from "next/server";
 import { streamReply, resolveProvider, sanitizeError } from "@/lib/ai";
+import { mergeAttachments } from "@/lib/file-extract";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -14,9 +17,12 @@ interface ChatBody {
   system?: string;
   temperature?: number;
   apiKey?: string; // مفتاح من لوحة المتصفح (BYOK) — اختياري
+  files?: { name: string; data: string }[]; // مرفقات (المرحلة 5) — اختياري
 }
 
-const MAX_INPUT_PAYLOAD = 60_000; // ~60KB بأمان
+// حد الحمولة الكلية: يسمح بملفات حتى ~4MB base64 (تحت حد Vercel 4.5MB)
+const MAX_INPUT_PAYLOAD = 4_400_000;
+const MAX_MESSAGE_TEXT = 60_000; // حد نص الرسائل (بدون المرفقات) — لا يُفتح للإساءة النصية
 const MAX_MESSAGES = 20; // عدد الرسائل الأقصى المستلم
 
 export async function POST(req: NextRequest) {
@@ -58,7 +64,26 @@ export async function POST(req: NextRequest) {
     : [];
 
   const last = messages[messages.length - 1];
-  if (!last || last.role !== "user" || !last.content.trim()) {
+  if (!last || last.role !== "user") {
+    return Response.json({ error: "لا توجد رسالة مستخدم صالحة" }, { status: 400 });
+  }
+
+  // حماية: سقف نص الرسائل (بدون المرفقات) — رفع حد الحمولة للملفات لا يفتح بابًا نصيًا
+  const textSize = messages.reduce((n, m) => n + m.content.length, 0);
+  if (textSize > MAX_MESSAGE_TEXT) {
+    return Response.json({ error: "الرسالة أكبر من الحد المسموح" }, { status: 413 });
+  }
+
+  // المرحلة 5 — قراءة الملفات: تُستخرج وتُدمج في رسالة المستخدم الأخيرة (رفض واضح 400)
+  try {
+    await mergeAttachments(body.files, last);
+  } catch (err) {
+    return Response.json(
+      { error: err instanceof Error ? err.message : "تعذر قراءة الملف المرفق" },
+      { status: 400 }
+    );
+  }
+  if (!last.content.trim()) {
     return Response.json({ error: "لا توجد رسالة مستخدم صالحة" }, { status: 400 });
   }
 

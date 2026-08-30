@@ -10,6 +10,7 @@ import {
   Cloud,
   LogIn,
   LogOut,
+  Paperclip,
   RefreshCw,
   Send,
   Settings as SettingsIcon,
@@ -40,6 +41,7 @@ export default function Home() {
   const [settings, setSettings] = useState<Settings>(DEFAULTS_SETTINGS);
   const [status, setStatus] = useState<ProviderStatus | null>(null);
   const [input, setInput] = useState("");
+  const [files, setFiles] = useState<{ name: string; data: string }[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showSidebarMobile, setShowSidebarMobile] = useState(false);
@@ -161,7 +163,11 @@ export default function Home() {
 
   // ===== قلب البث: يشغل المحادثة ويلحق رد المساعد =====
   const run = useCallback(
-    async (conv: Conversation, history: { role: string; content: string }[]) => {
+    async (
+      conv: Conversation,
+      history: { role: string; content: string }[],
+      attachments?: { name: string; data: string }[]
+    ) => {
       const asstId = uid();
       const asst: ChatMessage = { id: asstId, role: "assistant", content: "", createdAt: Date.now() };
       setActiveId(conv.id);
@@ -191,6 +197,7 @@ export default function Home() {
             system: settings.system,
             temperature: settings.temperature,
             ...(apiKeyOverride ? { apiKey: apiKeyOverride } : {}),
+            ...(attachments?.length ? { files: attachments } : {}),
           }),
           signal: ac.signal,
         });
@@ -271,7 +278,7 @@ export default function Home() {
   const sendMessage = useCallback(
     async (text?: string) => {
       const content = (text ?? input).trim();
-      if (!content || streaming) return;
+      if ((!content && files.length === 0) || streaming) return;
       setInput("");
 
       let conv: Conversation;
@@ -294,9 +301,10 @@ export default function Home() {
       update(conv.id, () => nextConv);
 
       const history = nextConv.messages.map((m) => ({ role: m.role, content: m.content }));
-      await run(nextConv, history);
+      await run(nextConv, history, files);
+      setFiles([]);
     },
-    [active, input, streaming, createChat, update, run]
+    [active, input, files, streaming, createChat, update, run]
   );
 
   const stopStreaming = () => abortRef.current?.abort();
@@ -317,6 +325,31 @@ export default function Home() {
   };
 
   // ===== الإعدادات والبيانات =====
+  // ===== إرفاق الملفات (المرحلة 5): تُقرأ base64 وتُرسل مع الرسالة =====
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const handlePickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    const next = [...files];
+    for (const f of picked) {
+      if (next.length >= 3) {
+        setError(t("fileMax"));
+        break;
+      }
+      if (f.size > 1_000_000) {
+        setError(t("fileTooBig"));
+        continue;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = String(reader.result ?? "");
+        const data = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
+        setFiles((prev) => [...prev, { name: f.name, data }]);
+      };
+      reader.readAsDataURL(f);
+    }
+  };
+
   const saveSettings = (s: Settings) => {
     setSettings(s);
     setShowSettings(false);
@@ -579,6 +612,45 @@ export default function Home() {
         <div className="px-4 pb-4 pt-2 shrink-0">
           <div className="max-w-3xl mx-auto">
             <div className="flex items-end gap-2 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-xl shadow-black/5 focus-within:border-indigo-500 transition-colors">
+              {/* المرفقات المحددة (المرحلة 5): شريبات صغيرة قابلة للإزالة */}
+              {files.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-1">
+                  {files.map((f, i) => (
+                    <span
+                      key={`${f.name}-${i}`}
+                      className="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 text-indigo-300 text-[11px] px-2 py-0.5 max-w-52 truncate"
+                    >
+                      <Paperclip size={11} className="shrink-0" />
+                      <span className="truncate">{f.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
+                        className="hover:text-white transition-colors"
+                        title={t("removeFile")}
+                      >
+                        <X size={11} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".txt,.md,.csv,.json,.pdf,.docx"
+                className="hidden"
+                onChange={handlePickFiles}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={streaming || files.length >= 3}
+                className="w-10 h-10 shrink-0 rounded-xl text-[var(--muted)] hover:text-indigo-300 hover:bg-indigo-500/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                title={t("attach")}
+              >
+                <Paperclip size={16} />
+              </button>
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -608,7 +680,7 @@ export default function Home() {
               ) : (
                 <button
                   onClick={() => sendMessage()}
-                  disabled={!input.trim()}
+                  disabled={!input.trim() && files.length === 0}
                   className="w-11 h-11 shrink-0 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95 shadow-lg shadow-indigo-500/25"
                   title={t("send")}
                 >

@@ -43,6 +43,10 @@ const dict: Record<Lang, Record<string, string>> = {
 
     composerPlaceholder: "اكتب رسالتك هنا…",
     composerHint: "Enter للإرسال · Shift+Enter لسطر جديد",
+    attach: "إرفاق ملف (TXT, MD, CSV, JSON, PDF, DOCX)",
+    removeFile: "إزالة المرفق",
+    fileTooBig: "الملف أكبر من 1 ميجابايت",
+    fileMax: "حد أقصى 3 ملفات في الرسالة",
     send: "إرسال",
     stop: "إيقاف",
     copy: "نسخ",
@@ -150,6 +154,10 @@ const dict: Record<Lang, Record<string, string>> = {
 
     composerPlaceholder: "Type your message…",
     composerHint: "Enter to send · Shift+Enter for new line",
+    attach: "Attach file (TXT, MD, CSV, JSON, PDF, DOCX)",
+    removeFile: "Remove attachment",
+    fileTooBig: "File exceeds 1 MB",
+    fileMax: "Maximum 3 files per message",
     send: "Send",
     stop: "Stop",
     copy: "Copy",

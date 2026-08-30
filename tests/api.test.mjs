@@ -243,6 +243,33 @@ test("مفتاح BYOK بمحارف تحكم → 400 (سياسة صيغة الم�
   assert.equal(res.status, 400);
 });
 
+test("POST /api/chat مع مرفق TXT → البث يعمل ويستوعب المرفق (المرحلة 5)", async () => {
+  const fileB64 = Buffer.from("نص سري داخل الملف المرفق", "utf8").toString("base64");
+  const { res, events } = await postChat({
+    messages: [{ role: "user", content: "لخص لي الملف المرفق" }],
+    modelId: "demo",
+    files: [{ name: "note.txt", data: fileB64 }],
+  });
+  assert.equal(res.status, 200);
+  assert.ok(events.some((e) => e.provider), "يجب أن يعلن المزود");
+  assert.ok(events.some((e) => e.done), "يجب أن ينتهي البث بنجاح");
+});
+
+test("POST /api/chat مع مرفق بصيغة غير مدعومة → 400 واضح", async () => {
+  const res = await fetch(`${BASE}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages: [{ role: "user", content: "شاهد" }],
+      modelId: "demo",
+      files: [{ name: "bad.exe", data: Buffer.from("MZ").toString("base64") }],
+    }),
+  });
+  assert.equal(res.status, 400);
+  const j = await res.json();
+  assert.match(j.error, /غير مدعومة/);
+});
+
 test("تجاوز حد الرسائل يعيد 429 برسالة واضحة وترويسات الحماية", async () => {
   const statuses = [];
   for (let i = 0; i < 25; i++) {

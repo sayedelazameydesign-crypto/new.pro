@@ -201,6 +201,7 @@ syncScope = user:<canonicalUserId>
 | 3 | **4 مزودات + بحث** | Gemini · Groq · HuggingFace · Tavily(بحث بمصادر) · demo | ✅ **كلها مفعّلة حيًا** `{gemini,hf,groq,search:true}` |
 | 4 | **حسابات وأجهزة** | Auth.js v5؛ دخول بريد/كلمة مرور + Google (مفعّل حيًا) + GitHub (اختياري)؛ مزامنة عبر `user:<id>` + **Provisioning إلزامي لكل طرق الدخول** | ✅ بريد/كلمة مرور + Google OAuth + طبقة هوية (4.3)؛ GitHub بانتظار مفاتيحك |
 | 5 | **مزامنة عبر الأجهزة** | `nahwa_sync` في Neon؛ الزائر → `device:<id>`، المسجّل → `user:<canonicalUserId>` | ✅ مثبتة (جهازان قرآ نفس المحادثة) |
+| 5.1 | **قراءة الملفات المرفقة** | مرفقات TXT/MD/CSV/JSON/PDF/DOCX → استخراج نص (pdf-parse + mammoth، مفتوحان) → دمج في رسالة المستخدم الأخيرة → رؤية المزود له | ✅ منفذة (زر 📎، حد 3×1MB، 10 اختبارات استخراج) |
 | 6 | **حماية الحدود** | 20 رسالة/دقيقة + 60 مزامنة/دقيقة، `429` + ترويسات `X-RateLimit-*`؛ Upstash اختياري لمشاركة الحدود | ✅ `memory` فعّال (Upstash اختياري) |
 | 7 | **لوحة مفاتيح BYOK** | من ⚙️ الإعدادات: أي زائر يلصق مفتاحه في المتصفح → تفعيل فوري دون لمس Vercel | ✅ مثبتة حيًا |
 | 8 | **واجهة RTL مصقولة** | عربية بالكامل + داكن + اقتراحات + اختيار نماذج | ✅ تعمل |
@@ -249,7 +250,7 @@ AuthModal (تبويب دخول/تسجيل) → POST /api/auth/register (تسجي
 
 | الطريقة والمسار | المدخلات | المخرجات |
 |---|---|---|
-| `POST /api/chat` | `{messages, modelId, apiKey?}` | SSE: `provider`, `delta`, `sources`, `done` |
+| `POST /api/chat` | `{messages, modelId, apiKey?, files?}` — `files` (المرحلة 5): `{name, data(base64)}[]` حتى 3×1MB | SSE: `provider`, `chunk`, `sources`, `done`, `error` المعقّم |
 | `GET /api/models` | — | قائمة النماذج |
 | `GET /api/status` | — | `{gemini, huggingface, groq, search}` |
 | `GET /api/conversations` | النطاق من الجلسة/الجهاز | `{conversations, settings}` |
@@ -319,7 +320,7 @@ nahwa_users(
 ```
 npm run typecheck   → tsc --noEmit
 npm run build       → next build
-npm test            → 39/39 (25 API + 12 هوية + 2 سباق: 10 استدعاءات متزامنة → صف واحد)
+npm test            → 51/51 (25 API + 12 هوية + 2 سباق + 10 استخراج ملفات + 2 مرفقات API)
 npm run check:keys  → تشخيص المزودات
 ```
 
