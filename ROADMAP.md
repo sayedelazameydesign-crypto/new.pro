@@ -46,7 +46,8 @@
 - ✅ **Auth.js v5** + نافذة دخول/تسجيل في الواجهة
 - ✅ **ربط `userId` بجدول المزامنة** (أولوية تلقائية على deviceId — بلا كسر للزوار)
 - ✅ برهان حي: جهازان بنفس الحساب يريان نفس المحادثات
-- ⏳ (اختياري لاحقًا) GitHub OAuth + middleware
+- ✅ **Google OAuth مفعّل حيًا (2026-08-29)** — `AUTH_GOOGLE_ID/SECRET` في Vercel + التدفق مُثبت: `/api/auth/signin/google` → `accounts.google.com` ببياناتنا (client_id + redirect_uri مسجّلان)
+- ⏳ (اختياري لاحقًا) GitHub OAuth — بانتظار `AUTH_GITHUB_ID/SECRET` + middleware
 
 > 💡 نصيحة: **لا تؤجل الإطلاق للمرحلة 3** — الإطلاق بلا تسجيل أدخل وأسرع، والتسجيل يُضاف لاحقًا دون هدم.
 

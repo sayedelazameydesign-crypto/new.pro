@@ -9,7 +9,7 @@
 
 `Next.js 15 (App Router)` · `Gemini API` · `Hugging Face` · `Vercel` · `TypeScript` · `Tailwind v4`
 
-[![CI — فحص النواة](https://github.com/sayedelazameydesign-crypto/new.pro/actions/workflows/ci.yml/badge.svg)](https://github.com/sayedelazameydesign-crypto/new.pro/actions) · 10/10 اختبارات ✅
+[![CI — فحص النواة](https://github.com/sayedelazameydesign-crypto/new.pro/actions/workflows/ci.yml/badge.svg)](https://github.com/sayedelazameydesign-crypto/new.pro/actions) · 24/24 اختبارات ✅
 
 [واجهة عربية/إنجليزية RTL/LTR] · [بث مباشر (Streaming)] · [مفاتيح مجانية فقط] · [قابلة للتوسع دون هدم المعمارية]
 
@@ -77,13 +77,14 @@ npm run dev
 | الميزة | التفاصيل |
 |---|---|
 | **الدخول** | بريد + كلمة مرور (تُجزّأ بـ scrypt وتُخزَّن في Neon) — يعمل فورًا |
-| **الدخول بـ GitHub** | اختياري — أضف `AUTH_GITHUB_ID` + `AUTH_GITHUB_SECRET` (من GitHub → Settings → Developer settings → OAuth Apps) فيظهر الزر تلقائيًا |
+| **الدخول بـ Google** | ✅ **مفعّل حيًا** — `AUTH_GOOGLE_ID` + `AUTH_GOOGLE_SECRET` في Vercel، والزر يبدأ التدفق الصحيح (مُثبت: `/api/auth/signin/google` → `accounts.google.com` ببياناتنا) |
+| **الدخول بـ GitHub** | ⏳ اختياري — أضف `AUTH_GITHUB_ID` + `AUTH_GITHUB_SECRET` (GitHub → Settings → Developer settings → OAuth Apps) فيظهر الزر تلقائيًا |
 | **الترقية الذكية** | مستخدم مسجّل → المزامنة عبر `userId`؛ زائر غير مسجّل → تبقى عبر `deviceId` (سلوك سابق سليم) |
 | **الحماية** | 10 محاولات دخول/دقيقة/IP + تسجيل 10/دقيقة/IP |
 
 **تفعيل الحسابات:** `AUTH_SECRET` (عشوائيًا: `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`) + `DATABASE_URL` — الجدول `nahwa_users` يُنشأ تلقائيًا.
 
-> ✅ **الحالة:** مفعّلة على [new-pro-kohl.vercel.app](https://new-pro-kohl.vercel.app) — مثبتة بجولة حية (تسجيل → دخول → مزامنة من جهازين).
+> ✅ **الحالة:** مفعّلة على [new-pro-kohl.vercel.app](https://new-pro-kohl.vercel.app) — مثبتة بجولة حية (تسجيل → دخول → مزامنة من جهازين) + **Google OAuth مفعّل (2026-08-29)** — آخر خطوة: تسجيل دخول من متصفح المستخدم.
 
 
 ## 🛡️ حماية الحدود (Rate Limit — يعمل تلقائيًا بلا إعداد)

@@ -188,3 +188,22 @@ POST /api/chat modelId=search:web:
   (استمرت النتائج مع روابط المصادر حتى النهاية) — ~2.2 ثانية
 ```
 - المفتاح يعمل من بيئة Vercel (أولوية) ومن لوحة المتصفح (BYOK) على حد سواء.
+
+---
+
+# 🧪 تقرير الاختبار — الجولة السابعة (تفعيل Google OAuth حيًا)
+
+> **التاريخ:** 2026-08-29 · **النتيجة:** ✅ المزود مفعّل والسلسلة مُثبتة حيًا — بقي اختبار القبول النهائي من متصفح المستخدم
+
+## الإثبات الحي (new-pro-kohl.vercel.app — نشر `dpl_6FLVNaggAtuD97fERRXgBwufAut7`)
+| الخطوة | الدليل الفعلي |
+|---|---|
+| المفاتيح في Vercel | `AUTH_GOOGLE_ID` + `AUTH_GOOGLE_SECRET` → HTTP 201 (المفتاح لم يُخزَّن في أي ملف/مستودع) |
+| المزود ظهر | `GET /api/auth/providers` → `"google": {"type":"oidc","callbackUrl":".../api/auth/callback/google"}` |
+| الحالة | `GET /api/auth/status` → `providers: {google: true, github: false}` |
+| التدفق الكامل | `POST /api/auth/signin/google` + CSRF → 302 إلى `accounts.google.com/o/oauth2/v2/auth?client_id=1082460812110-...&redirect_uri=.../api/auth/callback/google&scope=openid profile email` + PKCE |
+| Google يقبلنا | طلب تفويض حقيقي بنفس client_id + redirect_uri → صفحة تسجيل دخول Google (لا `redirect_uri_mismatch`) |
+| لا انكسار | `/api/status` ما زال `{gemini,huggingface,groq,search:true}` |
+
+## المتبقي (اختبار قبول نهائي — يتطلب حساب Google في متصفح المستخدم)
+زر «المتابعة عبر Google» → تسجيل الدخول → `/api/auth/callback/google` → جلسة → صف في `nahwa_users` → مزامنة عبر `user:<id>`.
