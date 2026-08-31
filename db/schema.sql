@@ -34,3 +34,13 @@ CREATE TABLE IF NOT EXISTS nahwa_auth_identities (
 
 -- فهرسة استعلامات الربط والعد
 CREATE INDEX IF NOT EXISTS idx_nahwa_auth_identities_user ON nahwa_auth_identities (user_id);
+
+-- =====================================================================
+--  عدّاد حدود موزّع (نافذة ثابتة 60ث) — يُنشأ تلقائيًا عند أول طلب
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS rate_limit_hits (
+  bucket       text        NOT NULL,
+  window_start timestamptz NOT NULL,
+  count        integer     NOT NULL DEFAULT 0,
+  PRIMARY KEY (bucket, window_start)
+);

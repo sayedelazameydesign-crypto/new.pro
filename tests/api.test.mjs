@@ -63,6 +63,7 @@ test("GET /api/status يرد بحالة المزودات (بدون كشف الق
   assert.equal(typeof j.search, "boolean");
   assert.equal(typeof j.image, "boolean");
   assert.equal(j.image, false);
+  assert.ok(j.rateLimit === "neon" || j.rateLimit === "memory");
   assert.equal(typeof j.breakers, "object");
 });
 

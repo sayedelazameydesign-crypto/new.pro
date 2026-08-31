@@ -4,8 +4,8 @@
 
 ```text
 BASELINE            auth-baseline -> 289c7f5   (AUTH HARDENED / FINAL — محمي، غير قابل للإزاحة)
-CURRENT_CHECKPOINT  arena/01a05733-new-pro (Phase E: Pollinations images)
-                   parent D 10289f8 · 0 f87b702 · main 429df9c.
+CURRENT_CHECKPOINT  arena/01a05733-new-pro (Phase F: Neon distributed rate limit)
+                   parent E 6b27d21 · D 10289f8 · 0 f87b702 · main 429df9c.
 
 STATUS_MATRIX
   - 5.1 = PASS            (قراءة ملفات — مثبتة حيًا)
@@ -16,7 +16,7 @@ STATUS_MATRIX
 COMPLETED
   - المنصة الأساسية (Next 16 / RTL / بث / 4 مزودات + بحث / مزامنة Neon / LocalStore)
   - Auth.js v5 (بريد + Google OAuth حي + GitHub جاهز) + طبقة هوية AUTH HARDENING
-  - حماية الحدود (20 chat / 60 sync / دقيقة) + BYOK لوحة مفاتيح + سياسات Provider/BYOK
+  - حماية الحدود (20 chat / 60 sync / 12 image / 10 intel) — F: Neon ذرة SQL + هبوط Map
   - قراءة الملفات المرفقة (5.1): TXT/MD/CSV/JSON/PDF/DOCX — زر 📎 + دمج بالسياق
   - توليد الصور (5.2/E): Pollinations URL مباشر + قاطع 429 + Zod 3–500 / 256|512|1024
   - الصوت (5.3): lib/speech.ts — إملاء 🎤 + قراءة 🔊 (Web Speech API، واجهة فقط)
@@ -42,7 +42,7 @@ COMPLETED
   - توثيق: SYSTEM-GUIDE · BASELINE · TEST-REPORT (15 جولة) · ROADMAP · README
 
 IN_PROGRESS
-  - (لا شيء مفتوح بعد دفعة E)
+  - (لا شيء مفتوح بعد دفعة F)
 
 BLOCKED
   - 5.2 LIVE TLS من الصندوق = ECONNRESET إلى image.pollinations.ai (بناء الرابط ✓)
