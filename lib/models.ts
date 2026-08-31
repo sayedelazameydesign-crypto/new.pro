@@ -1,7 +1,7 @@
 // ===== سجل الموديلات (مشترك بين الواجهة والخلفية) =====
 // إضافة موديل جديد = سطر واحد هنا فقط — بدون لمس أي كود آخر.
 
-export type ProviderKind = "gemini" | "huggingface" | "groq" | "search" | "demo";
+export type ProviderKind = "gemini" | "huggingface" | "groq" | "github" | "search" | "demo";
 
 export interface ModelDef {
   id: string; // "provider:model-name"
@@ -34,6 +34,15 @@ export const MODELS: ModelDef[] = [
     name: "GPT-OSS 20B (Groq)",
     provider: "groq",
     description: "خفيف وسريع جدًا — حصة يومية أعلى",
+    free: true,
+  },
+
+  // — GitHub Models (PAT بصلاحية models:read — بلا بطاقة) —
+  {
+    id: "github:openai/gpt-4o-mini",
+    name: "GPT-4o mini (GitHub)",
+    provider: "github",
+    description: "نماذج GitHub المجانية — توكن GITHUB_MODELS_TOKEN",
     free: true,
   },
 

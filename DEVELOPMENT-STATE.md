@@ -4,9 +4,8 @@
 
 ```text
 BASELINE            auth-baseline -> 289c7f5   (AUTH HARDENED / FINAL — محمي، غير قابل للإزاحة)
-CURRENT_CHECKPOINT  arena/01a05733-new-pro (Phase 0: Zod tighten + hide images + docs/eslint)
-                   parent main = 429df9c (PR #12 ci checkout v5). سلسلة سابقة: b75f9bc (PR #10
-                   next 16.3.3). المرجع البرمجي = 8918512
+CURRENT_CHECKPOINT  arena/01a05733-new-pro (Phase D: GitHub Models + circuit breaker)
+                   parent phase 0 f87b702. main = 429df9c.
 
 STATUS_MATRIX
   - 5.1 = PASS            (قراءة ملفات — مثبتة حيًا)
@@ -45,7 +44,7 @@ COMPLETED
   - توثيق: SYSTEM-GUIDE · BASELINE · TEST-REPORT (15 جولة) · ROADMAP · README
 
 IN_PROGRESS
-  - المرحلة 0 (مجاني بلا فيزا): تشديد parseChatBody + إخفاء الصور + مزامنة README + eslint-config-next 16
+  - (لا شيء مفتوح بعد دفعة D)
 
 BLOCKED
   - 5.2 LIVE VERIFICATION    = EXTERNAL PROVIDER BLOCKER (حساب HF بلا مزود صور مفعّل — DEFERRED)
@@ -55,12 +54,12 @@ BLOCKED
   - Vercel CLI token                 = منتهي (لا يضر؛ النشر عبر git integration)
   - (بيئي عابر) حصة Gemini المجانية كانت 429 أثناء جولة التحقق — لا أثر على النتائج
 
-TEST_STATUS        يُحدَّث بعد npm test في هذه الجلسة
-CI_STATUS          بانتظار دفع الفرع arena/01a05733-new-pro
+TEST_STATUS        وحدات 144/144 (بلا خادم) + قاطع 8/8 + PS-6 · lint 0 · typecheck · build ✓
+CI_STATUS          بانتظار دفع arena/01a05733-new-pro
 DEPLOYMENT_STATUS   LIVE — https://new-pro-kohl.vercel.app (يخدم main@429df9c)
-SECURITY_STATUS    No secret leakage · مسار الصور لا يستدعي HF ما لم يُفعَّل العلم
+SECURITY_STATUS    GITHUB_MODELS_TOKEN ≠ GITHUB_TOKEN · لا تسريب أسرار
 
-NEXT_SAFE_ACTION   بعد دمج المرحلة 0: GitHub Models + قاطع دائرة 429 (سلسلة مزودين بلا فيزا)
+NEXT_SAFE_ACTION   Pollinations لإحياء الصور / أو حدود Neon الموزّعة
 ```
 
 <!-- تحديث: 2026-08-30 · المرحلة 6/Item 4: E2E (148/148 + 15/15) · هذا الـcommit -->

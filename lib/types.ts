@@ -33,6 +33,7 @@ export interface ProviderStatus {
   gemini: boolean;
   huggingface: boolean;
   groq: boolean;
+  github: boolean;
   search: boolean;
 }
 

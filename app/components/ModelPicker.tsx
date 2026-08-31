@@ -20,6 +20,7 @@ function ProviderBadge({ provider }: { provider: string }) {
     gemini: "bg-blue-500/15 text-blue-400 border-blue-500/25",
     huggingface: "bg-amber-500/15 text-amber-400 border-amber-500/25",
     groq: "bg-orange-500/15 text-orange-400 border-orange-500/25",
+    github: "bg-slate-500/15 text-slate-300 border-slate-500/25",
     search: "bg-cyan-500/15 text-cyan-400 border-cyan-500/25",
     demo: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25",
   };
@@ -27,6 +28,7 @@ function ProviderBadge({ provider }: { provider: string }) {
     gemini: "Gemini",
     huggingface: "Hugging Face",
     groq: "Groq",
+    github: "GitHub",
     search: "بحث",
     demo: "Demo",
   };
@@ -97,13 +99,20 @@ export default function ModelPicker({ modelId, status, t, onPick }: Props) {
               <Cpu size={11} />
               {t("providerKeys")}
             </div>
-            <div className="flex gap-1.5">
+            <div className="flex flex-wrap gap-1.5">
               <span
                 className={`flex-1 text-center px-2 py-1 rounded-lg text-[10px] font-bold ${
                   status?.groq ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/10 text-red-400/80"
                 }`}
               >
                 Groq {status?.groq ? "✓" : "—"}
+              </span>
+              <span
+                className={`flex-1 text-center px-2 py-1 rounded-lg text-[10px] font-bold ${
+                  status?.github ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/10 text-red-400/80"
+                }`}
+              >
+                GitHub {status?.github ? "✓" : "—"}
               </span>
               <span
                 className={`flex-1 text-center px-2 py-1 rounded-lg text-[10px] font-bold ${

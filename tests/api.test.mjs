@@ -59,7 +59,9 @@ test("GET /api/status يرد بحالة المزودات (بدون كشف الق
   assert.equal(typeof j.gemini, "boolean");
   assert.equal(typeof j.huggingface, "boolean");
   assert.equal(typeof j.groq, "boolean");
+  assert.equal(typeof j.github, "boolean");
   assert.equal(typeof j.search, "boolean");
+  assert.equal(typeof j.breakers, "object");
 });
 
 // ─────────── 3) قائمة الموديلات ───────────
@@ -124,6 +126,15 @@ test("طلب Groq بلا مفتاح يتراجع تلقائيًا", async () => 
   const { res, events } = await postChat({
     messages: [{ role: "user", content: "اختبار تراجع Groq" }],
     modelId: "groq:llama-3.3-70b-versatile",
+  });
+  assert.equal(res.status, 200);
+  assert.equal(events.find((e) => e.provider)?.provider, "demo");
+});
+
+test("طلب GitHub Models بلا توكن يتراجع تلقائيًا", async () => {
+  const { res, events } = await postChat({
+    messages: [{ role: "user", content: "اختبار تراجع GitHub Models" }],
+    modelId: "github:openai/gpt-4o-mini",
   });
   assert.equal(res.status, 200);
   assert.equal(events.find((e) => e.provider)?.provider, "demo");

@@ -76,7 +76,7 @@ export default function Home() {
     },
     // نفس السلوك القديم عند الفشل/قبل التحميل (لا null يزعج الواجهة):
     // لا نعرّض null — نعرض «الكل غير مفعّل» كما كان catch يفعل
-    initialData: { gemini: false, huggingface: false, groq: false, search: false } as ProviderStatus,
+    initialData: { gemini: false, huggingface: false, groq: false, github: false, search: false } as ProviderStatus,
   });
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<{ name: string; data: string }[]>([]);
