@@ -57,7 +57,6 @@ import { copyText, uid } from "@/lib/utils";
 import { summarize, shouldSummarize, composeSystem } from "@/lib/summary";
 import type { ChatMessage, Conversation, ProviderStatus, Settings } from "@/lib/types";
 import { queryKeys } from "@/lib/query-client";
-import { IMAGE_UI_ENABLED } from "@/lib/flags";
 import Toasts from "@/app/components/Toasts";
 
 const store = new LocalStore();
@@ -76,7 +75,7 @@ export default function Home() {
     },
     // نفس السلوك القديم عند الفشل/قبل التحميل (لا null يزعج الواجهة):
     // لا نعرّض null — نعرض «الكل غير مفعّل» كما كان catch يفعل
-    initialData: { gemini: false, huggingface: false, groq: false, github: false, search: false } as ProviderStatus,
+    initialData: { gemini: false, huggingface: false, groq: false, github: false, search: false, image: false } as ProviderStatus,
   });
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<{ name: string; data: string }[]>([]);
@@ -441,7 +440,7 @@ export default function Home() {
   };
 
   // ===== الإعدادات والبيانات =====
-  // ===== توليد صورة (المرحلة 5.2): FLUX عبر HF — تُعرض داخل المحادثة =====
+  // ===== توليد صورة: Pollinations — الرابط يُعرض مباشرة (لا بروكسي بايتات) =====
   const generateImageFlow = useCallback(async () => {
     const prompt = input.trim();
     if (!prompt) {
@@ -470,36 +469,25 @@ export default function Home() {
       ],
     };
     update(conv.id, () => nextConv);
-    void ensureIntelTitle(conv.id, nextConv.messages); // CR-006: أول رسالة → عنوان ذكي
+    void ensureIntelTitle(conv.id, nextConv.messages);
     setActiveId(conv.id);
     setError(null);
 
     try {
-      // مفتاح لوحة المتصفح (HF) يتقدّم على بيئة الخادم — نفس سياسة BYOK
-      const keyName = PROVIDER_TO_KEY.huggingface;
-      const apiKey = keyName ? getKey(keyName) : "";
       const res = await fetch("/api/image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, ...(apiKey ? { apiKey } : {}) }),
+        body: JSON.stringify({ prompt }),
       });
-      if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        throw new Error(j?.error ?? `HTTP ${res.status}`);
-      }
-      const blob = await res.blob();
-      if (!blob.size) throw new Error(t("imageEmpty"));
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const fr = new FileReader();
-        fr.onload = () => resolve(String(fr.result));
-        fr.onerror = () => reject(new Error(t("imageEmpty")));
-        fr.readAsDataURL(blob);
-      });
+      const j = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(j?.error ?? `HTTP ${res.status}`);
+      const url = typeof j?.url === "string" ? j.url : "";
+      if (!url.startsWith("https://image.pollinations.ai/")) throw new Error(t("imageEmpty"));
       update(conv.id, (c) => ({
         ...c,
         updatedAt: Date.now(),
         messages: c.messages.map((m) =>
-          m.id === placeholderId ? { ...m, content: `![${t("imageAlt")}](${dataUrl})` } : m
+          m.id === placeholderId ? { ...m, content: `![${t("imageAlt")}](${url})` } : m
         ),
       }));
     } catch (err) {
@@ -1052,7 +1040,7 @@ export default function Home() {
               >
                 <Paperclip size={16} />
               </button>
-              {IMAGE_UI_ENABLED && (
+              {status.image && (
               <button
                 type="button"
                 onClick={generateImageFlow}

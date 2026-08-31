@@ -213,7 +213,7 @@ ANTHROPIC_API_KEY=
 - [x] زائر بلا تسجيل + حسابات Auth.js (بريد + Google)
 - [x] مزود Groq + بحث ويب (Tavily)
 - [x] قراءة ملفات + صوت + ملخص + PWA + تصدير Markdown/PDF + مشاركة محلية `?c=id`
-- [ ] توليد صور بمسار مجاني معتمد (الزر مخفي حتى يتوفر — Pollinations مرشّح)
+- [x] توليد صور Pollinations (بلا مفتاح، بلا بروكسي) — العلم `IMAGE_GENERATION_ENABLED=1`
 - [ ] OpenRouter `:free` / GitHub Models / قاطع دائرة للحصة 429
 
 ---

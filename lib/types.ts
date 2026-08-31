@@ -35,6 +35,8 @@ export interface ProviderStatus {
   groq: boolean;
   github: boolean;
   search: boolean;
+  /** توليد الصور (Pollinations) — من IMAGE_GENERATION_ENABLED */
+  image: boolean;
 }
 
 export interface ApiError {

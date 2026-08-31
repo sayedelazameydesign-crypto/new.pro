@@ -4,14 +4,12 @@
 
 ```text
 BASELINE            auth-baseline -> 289c7f5   (AUTH HARDENED / FINAL — محمي، غير قابل للإزاحة)
-CURRENT_CHECKPOINT  arena/01a05733-new-pro (Phase D: GitHub Models + circuit breaker)
-                   parent phase 0 f87b702. main = 429df9c.
+CURRENT_CHECKPOINT  arena/01a05733-new-pro (Phase E: Pollinations images)
+                   parent D 10289f8 · 0 f87b702 · main 429df9c.
 
 STATUS_MATRIX
   - 5.1 = PASS            (قراءة ملفات — مثبتة حيًا)
-  - 5.2 = DEFERRED        (كود lib/image باقٍ + 9 اختبارات وحدة) — UI مخفي و/api/image → 503
-          IMAGE_DISABLED ما لم IMAGE_GENERATION_ENABLED=1
-          BLOCKER = HF ACCOUNT HAS NO ENABLED IMAGE INFERENCE PROVIDER
+  - 5.2 = POLLINATIONS    زر عبر /api/status.image · POST يعيد URL مباشر · HF lib/image باقٍ كمرجع
   - 5.3 = PASS            (الصوت Web Speech API — مثبتة حيًا 6/6)
   - 5.4 = PASS            (التذكّر: ملخص تلقائي للمحادثات الطويلة — مثبتة حيًا 9/9)
 
@@ -20,7 +18,7 @@ COMPLETED
   - Auth.js v5 (بريد + Google OAuth حي + GitHub جاهز) + طبقة هوية AUTH HARDENING
   - حماية الحدود (20 chat / 60 sync / دقيقة) + BYOK لوحة مفاتيح + سياسات Provider/BYOK
   - قراءة الملفات المرفقة (5.1): TXT/MD/CSV/JSON/PDF/DOCX — زر 📎 + دمج بالسياق
-  - توليد الصور (5.2): POST /api/image + زر 🎨 — مخفيان افتراضيًا (503 IMAGE_DISABLED)
+  - توليد الصور (5.2/E): Pollinations URL مباشر + قاطع 429 + Zod 3–500 / 256|512|1024
   - الصوت (5.3): lib/speech.ts — إملاء 🎤 + قراءة 🔊 (Web Speech API، واجهة فقط)
   - التذكّر (5.4): lib/summary.ts — عتبة 24 رسالة → ملخص عربي → Conversation.summary
     (يُزامن عبر Neon) → يُحقن في system → يصل فعليًا للمزودات (كان خللًا كامنًا أُصلح)
@@ -44,22 +42,22 @@ COMPLETED
   - توثيق: SYSTEM-GUIDE · BASELINE · TEST-REPORT (15 جولة) · ROADMAP · README
 
 IN_PROGRESS
-  - (لا شيء مفتوح بعد دفعة D)
+  - (لا شيء مفتوح بعد دفعة E)
 
 BLOCKED
-  - 5.2 LIVE VERIFICATION    = EXTERNAL PROVIDER BLOCKER (حساب HF بلا مزود صور مفعّل — DEFERRED)
+  - 5.2 LIVE TLS من الصندوق = ECONNRESET إلى image.pollinations.ai (بناء الرابط ✓)
   - AUTH-7 Real Google Browser E2E  = MANUAL / EXTERNAL (بانتظار موافقة المستخدم بحسابه)
   - GitHub OAuth                     = بانتظار AUTH_GITHUB_ID/SECRET من المستخدم
   - Upstash                          = بانتظار UPSTASH_REDIS_REST_URL/TOKEN من المستخدم
   - Vercel CLI token                 = منتهي (لا يضر؛ النشر عبر git integration)
   - (بيئي عابر) حصة Gemini المجانية كانت 429 أثناء جولة التحقق — لا أثر على النتائج
 
-TEST_STATUS        وحدات 144/144 (بلا خادم) + قاطع 8/8 + PS-6 · lint 0 · typecheck · build ✓
+TEST_STATUS        وحدات 148/148 (بلا خادم) · lint 0 · typecheck
 CI_STATUS          بانتظار دفع arena/01a05733-new-pro
 DEPLOYMENT_STATUS   LIVE — https://new-pro-kohl.vercel.app (يخدم main@429df9c)
-SECURITY_STATUS    GITHUB_MODELS_TOKEN ≠ GITHUB_TOKEN · لا تسريب أسرار
+SECURITY_STATUS    صور بلا مفتاح · لا بروكسي بايتات عبر Vercel
 
-NEXT_SAFE_ACTION   Pollinations لإحياء الصور / أو حدود Neon الموزّعة
+NEXT_SAFE_ACTION   عدّاد Neon للحدود الموزّعة
 ```
 
 <!-- تحديث: 2026-08-30 · المرحلة 6/Item 4: E2E (148/148 + 15/15) · هذا الـcommit -->

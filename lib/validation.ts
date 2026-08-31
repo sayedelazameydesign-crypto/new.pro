@@ -35,12 +35,29 @@ export const settingsSchema = z.object({
   lang: z.enum(["ar", "en"]),
 });
 
-// ===== طلب توليد صورة (POST /api/image) =====
+// ===== طلب توليد صورة (POST /api/image) — Pollinations =====
+export const IMAGE_SIZE_VALUES = [256, 512, 1024] as const;
+const imageSizeField = z
+  .number()
+  .refine((n): n is 256 | 512 | 1024 => n === 256 || n === 512 || n === 1024, {
+    message: "الأبعاد المسموحة: 256 أو 512 أو 1024",
+  });
+
 export const imageRequestSchema = z.object({
-  prompt: z.string().min(1).max(800),
+  prompt: z.string().trim().min(3).max(500),
+  width: imageSizeField.optional(),
+  height: imageSizeField.optional(),
   modelId: z.string().max(120).optional(),
   apiKey: z.string().max(300).optional(),
 });
+
+export type ImageRequest = z.infer<typeof imageRequestSchema>;
+
+export function parseImageBody(raw: unknown): { ok: true; data: ImageRequest } | { ok: false; error: string } {
+  const r = imageRequestSchema.safeParse(raw);
+  if (r.success) return { ok: true, data: r.data };
+  return { ok: false, error: "وصف الصورة 3–500 حرف، والأبعاد من القائمة 256/512/1024" };
+}
 
 // ===== أدوات مساعدة: parse آمن مع رسالة عربية موحّدة =====
 export function parseOrNull<T>(schema: z.ZodType<T>, data: unknown): T | null {
