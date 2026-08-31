@@ -59,7 +59,12 @@ test("GET /api/status يرد بحالة المزودات (بدون كشف الق
   assert.equal(typeof j.gemini, "boolean");
   assert.equal(typeof j.huggingface, "boolean");
   assert.equal(typeof j.groq, "boolean");
+  assert.equal(typeof j.github, "boolean");
   assert.equal(typeof j.search, "boolean");
+  assert.equal(typeof j.image, "boolean");
+  assert.equal(j.image, false);
+  assert.ok(j.rateLimit === "neon" || j.rateLimit === "memory");
+  assert.equal(typeof j.breakers, "object");
 });
 
 // ─────────── 3) قائمة الموديلات ───────────
@@ -124,6 +129,15 @@ test("طلب Groq بلا مفتاح يتراجع تلقائيًا", async () => 
   const { res, events } = await postChat({
     messages: [{ role: "user", content: "اختبار تراجع Groq" }],
     modelId: "groq:llama-3.3-70b-versatile",
+  });
+  assert.equal(res.status, 200);
+  assert.equal(events.find((e) => e.provider)?.provider, "demo");
+});
+
+test("طلب GitHub Models بلا توكن يتراجع تلقائيًا", async () => {
+  const { res, events } = await postChat({
+    messages: [{ role: "user", content: "اختبار تراجع GitHub Models" }],
+    modelId: "github:openai/gpt-4o-mini",
   });
   assert.equal(res.status, 200);
   assert.equal(events.find((e) => e.provider)?.provider, "demo");
@@ -270,7 +284,7 @@ test("POST /api/chat مع مرفق بصيغة غير مدعومة → 400 واض
   assert.match(j.error, /غير مدعومة/);
 });
 
-test("POST /api/image بلا مفتاح → 503 برسالة واضحة (المرحلة 5.2)", async () => {
+test("POST /api/image بلا مفتاح → 503 IMAGE_DISABLED (المرحلة 0 — الميزة معلّقة)", async () => {
   const res = await fetch(`${BASE}/api/image`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -278,27 +292,29 @@ test("POST /api/image بلا مفتاح → 503 برسالة واضحة (الم�
   });
   assert.equal(res.status, 503);
   const j = await res.json();
-  assert.match(j.error, /Hugging Face|HF_TOKEN/);
+  assert.equal(j.code, "IMAGE_DISABLED");
 });
 
-test("POST /api/image بوصف فارغ → 400", async () => {
+test("POST /api/image بوصف فارغ → 503 IMAGE_DISABLED (لا تحقق قبل العلم)", async () => {
   const res = await fetch(`${BASE}/api/image`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt: "   " }),
   });
-  assert.equal(res.status, 400);
+  assert.equal(res.status, 503);
+  const j = await res.json();
+  assert.equal(j.code, "IMAGE_DISABLED");
 });
 
-test("POST /api/image بمفتاح وهمي → يصل HF ويُرجع خطأ واضحًا (المسار كامل)", async () => {
+test("POST /api/image بمفتاح وهمي → 503 IMAGE_DISABLED (لا استدعاء HF)", async () => {
   const res = await fetch(`${BASE}/api/image`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt: "غروب", apiKey: "hf_fake_key_for_probe_123" }),
   });
-  assert.equal(res.status, 502);
+  assert.equal(res.status, 503);
   const j = await res.json();
-  assert.match(j.error, /مفتاح/);
+  assert.equal(j.code, "IMAGE_DISABLED");
 });
 
 test("تجاوز حد الرسائل يعيد 429 برسالة واضحة وترويسات الحماية", async () => {

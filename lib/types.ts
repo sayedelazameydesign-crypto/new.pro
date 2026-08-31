@@ -33,7 +33,10 @@ export interface ProviderStatus {
   gemini: boolean;
   huggingface: boolean;
   groq: boolean;
+  github: boolean;
   search: boolean;
+  /** توليد الصور (Pollinations) — من IMAGE_GENERATION_ENABLED */
+  image: boolean;
 }
 
 export interface ApiError {

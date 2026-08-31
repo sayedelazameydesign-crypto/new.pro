@@ -4,28 +4,21 @@
 
 ```text
 BASELINE            auth-baseline -> 289c7f5   (AUTH HARDENED / FINAL — محمي، غير قابل للإزاحة)
-CURRENT_CHECKPOINT  main = b75f9bc (HEAD — PR #10). سلسلة التوثيق: 2adab69 (Item 5 عبر PR #1)
-                   → d8d0d9e → 51a6519 (PR #3 FRONTEND-SPEC v1.0) → 8918512 (PR #2 إغلاق
-                   CR-005) → 301f768 (PR #4 FRONTEND-SPEC v1.1) → c02fdb2 (PR #5 v1.1.1)
-                   → 9d67b9f (PR #6: CR-006 عقد أ–و معتمد) → 0559dc4 (PR #7:
-                   Item 6 DONE) → 3732d32 (PR #8: إغلاق توثيقي) → b75f9bc (PR #10:
-                   next 16.3.3 — إغلاق Issue #9 الأمنية). المرجع البرمجي = 8918512
+CURRENT_CHECKPOINT  arena/01a05733-new-pro (Phase F: Neon distributed rate limit)
+                   parent E 6b27d21 · D 10289f8 · 0 f87b702 · main 429df9c.
 
 STATUS_MATRIX
   - 5.1 = PASS            (قراءة ملفات — مثبتة حيًا)
-  - 5.2 = IMPLEMENTED     (كود + 9 اختبارات صور + CI) — LIVE VERIFICATION = BLOCKED
-          BLOCKER = HF ACCOUNT HAS NO ENABLED IMAGE INFERENCE PROVIDER
-          STATUS = DEFERRED — EXTERNAL PROVIDER BLOCKER
-          (قرار هندسي موثق؛ تُستأنف فور تفعيل مزود صور في حساب HF أو مسار تشغيل معتمد)
+  - 5.2 = POLLINATIONS    زر عبر /api/status.image · POST يعيد URL مباشر · HF lib/image باقٍ كمرجع
   - 5.3 = PASS            (الصوت Web Speech API — مثبتة حيًا 6/6)
   - 5.4 = PASS            (التذكّر: ملخص تلقائي للمحادثات الطويلة — مثبتة حيًا 9/9)
 
 COMPLETED
-  - المنصة الأساسية (Next 15 / RTL / بث / 4 مزودات + بحث / مزامنة Neon / LocalStore)
+  - المنصة الأساسية (Next 16 / RTL / بث / 4 مزودات + بحث / مزامنة Neon / LocalStore)
   - Auth.js v5 (بريد + Google OAuth حي + GitHub جاهز) + طبقة هوية AUTH HARDENING
-  - حماية الحدود (20 chat / 60 sync / دقيقة) + BYOK لوحة مفاتيح + سياسات Provider/BYOK
+  - حماية الحدود (20 chat / 60 sync / 12 image / 10 intel) — F: Neon ذرة SQL + هبوط Map
   - قراءة الملفات المرفقة (5.1): TXT/MD/CSV/JSON/PDF/DOCX — زر 📎 + دمج بالسياق
-  - توليد الصور (5.2): POST /api/image + زر 🎨 — DEFERRED (حساب HF بلا مزود صور مفعّل)
+  - توليد الصور (5.2/E): Pollinations URL مباشر + قاطع 429 + Zod 3–500 / 256|512|1024
   - الصوت (5.3): lib/speech.ts — إملاء 🎤 + قراءة 🔊 (Web Speech API، واجهة فقط)
   - التذكّر (5.4): lib/summary.ts — عتبة 24 رسالة → ملخص عربي → Conversation.summary
     (يُزامن عبر Neon) → يُحقن في system → يصل فعليًا للمزودات (كان خللًا كامنًا أُصلح)
@@ -49,27 +42,22 @@ COMPLETED
   - توثيق: SYSTEM-GUIDE · BASELINE · TEST-REPORT (15 جولة) · ROADMAP · README
 
 IN_PROGRESS
-  - (لا شيء — كل بنود المرحلة المفتوحة أُغلقت؛ بند 2 من المرحلة 6 = NEXT_SAFE_ACTION)
+  - (لا شيء مفتوح بعد دفعة F)
 
 BLOCKED
-  - 5.2 LIVE VERIFICATION    = EXTERNAL PROVIDER BLOCKER (حساب HF بلا مزود صور مفعّل — DEFERRED)
+  - 5.2 LIVE TLS من الصندوق = ECONNRESET إلى image.pollinations.ai (بناء الرابط ✓)
   - AUTH-7 Real Google Browser E2E  = MANUAL / EXTERNAL (بانتظار موافقة المستخدم بحسابه)
   - GitHub OAuth                     = بانتظار AUTH_GITHUB_ID/SECRET من المستخدم
   - Upstash                          = بانتظار UPSTASH_REDIS_REST_URL/TOKEN من المستخدم
   - Vercel CLI token                 = منتهي (لا يضر؛ النشر عبر git integration)
   - (بيئي عابر) حصة Gemini المجانية كانت 429 أثناء جولة التحقق — لا أثر على النتائج
 
-TEST_STATUS        Unit/Integration 148/148 · E2E 15/15 (Playwright chromium)
-                   · lint 0/0 · typecheck نظيف · build ✓ (6/6)
-CI_STATUS          PASS (45591b4 — آخر دفعة؛ 56f2af1 و229b1e7 success سابقًا)
-DEPLOYMENT_STATUS   LIVE — https://new-pro-kohl.vercel.app (يخدم 45591b4؛ دليل: 30 رسالة
-                   + temp=99 → 200 عبر /api/chat الحي = تسامح zod منشور)
-SECURITY_STATUS    No secret leakage (git grep قبل/بعد كل دفع نظيف — مفاتيح الاختبارات وهمية
-                   معلومة) · BYOK/صلاحيات/بنية لم تُمس
+TEST_STATUS        وحدات 148/148 (بلا خادم) · lint 0 · typecheck
+CI_STATUS          بانتظار دفع arena/01a05733-new-pro
+DEPLOYMENT_STATUS   LIVE — https://new-pro-kohl.vercel.app (يخدم main@429df9c)
+SECURITY_STATUS    صور بلا مفتاح · لا بروكسي بايتات عبر Vercel
 
-NEXT_SAFE_ACTION   المرحلة 6 — بند 5: تحسينات (اختصارات لوحة مفاتيح، سحب الملفات للإدخال،
-                   وضع ملء الشاشة) ثم بند 6: ذكاء (اقتراح استكمال، عنوان أفضل) —
-                   بالترتيب الدقيق من ROADMAP؛ كل بند يُغلق باختبارات + CI + دفع
+NEXT_SAFE_ACTION   عدّاد Neon للحدود الموزّعة
 ```
 
 <!-- تحديث: 2026-08-30 · المرحلة 6/Item 4: E2E (148/148 + 15/15) · هذا الـcommit -->

@@ -173,6 +173,7 @@ export default function SettingsModal({ settings, status, t, onSave, onClose, on
             </div>
             <KeyRow name="GEMINI_API_KEY" label={t("geminiStatus")} envActive={!!status?.gemini} t={t} />
             <KeyRow name="GROQ_API_KEY" label="Groq" envActive={!!status?.groq} t={t} />
+            <KeyRow name="GITHUB_MODELS_TOKEN" label="GitHub Models" envActive={!!status?.github} t={t} />
             <KeyRow name="HF_TOKEN" label={t("hfStatus")} envActive={!!status?.huggingface} t={t} />
             <KeyRow name="TAVILY_API_KEY" label={t("searchStatus")} envActive={!!status?.search} t={t} />
             <p className="text-[10px] leading-relaxed text-[var(--muted)]">{t("keysHint")}</p>

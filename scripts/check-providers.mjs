@@ -7,6 +7,7 @@
 
 const PROVIDERS = [
   { name: "Groq", env: "GROQ_API_KEY", modelId: "groq:openai/gpt-oss-120b" },
+  { name: "GitHub Models", env: "GITHUB_MODELS_TOKEN", modelId: "github:openai/gpt-4o-mini" },
   { name: "Gemini", env: "GEMINI_API_KEY", modelId: "gemini:gemini-2.5-flash" },
   { name: "Hugging Face", env: "HF_TOKEN", modelId: "hf:Qwen/Qwen2.5-7B-Instruct" },
 ];

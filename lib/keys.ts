@@ -5,13 +5,19 @@
 import { safeGet, safeSet } from "./utils";
 import type { ProviderKind } from "./models";
 
-export type KeyName = "GEMINI_API_KEY" | "GROQ_API_KEY" | "HF_TOKEN" | "TAVILY_API_KEY";
+export type KeyName =
+  | "GEMINI_API_KEY"
+  | "GROQ_API_KEY"
+  | "HF_TOKEN"
+  | "TAVILY_API_KEY"
+  | "GITHUB_MODELS_TOKEN";
 
 const STORE = "nawah:keys";
 
 export const PROVIDER_TO_KEY: Partial<Record<ProviderKind, KeyName>> = {
   gemini: "GEMINI_API_KEY",
   groq: "GROQ_API_KEY",
+  github: "GITHUB_MODELS_TOKEN",
   huggingface: "HF_TOKEN",
   search: "TAVILY_API_KEY",
 };

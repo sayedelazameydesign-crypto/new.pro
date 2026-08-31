@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import { geminiStream } from "../lib/ai/providers/gemini";
 import { groqStream } from "../lib/ai/providers/groq";
 import { huggingfaceStream } from "../lib/ai/providers/huggingface";
+import { githubModelsStream, GITHUB_MODELS_URL } from "../lib/ai/providers/github-models";
 
 function sseResponse(chunks: unknown[]): Response {
   const lines = chunks.map((c) => `data: ${JSON.stringify(c)}\n\n`).join("");
@@ -103,6 +104,31 @@ test("PS-4 HuggingFace: system يُحقن كأول رسالة في router payloa
       token: "k",
       maxTokens: 50,
     })) { void c; break; }
+  } finally {
+    restore();
+  }
+});
+
+test("PS-6 GitHub Models: system يُحقن كأول رسالة + عنوان models.github.ai", async () => {
+  const restore = mockFetch((url, init) => {
+    assert.ok(url.includes("models.github.ai"), url);
+    assert.equal(url, GITHUB_MODELS_URL);
+    const body = JSON.parse(String(init.body));
+    assert.equal(body.model, "openai/gpt-4o-mini");
+    assert.equal(body.messages[0].role, "system");
+    assert.equal(body.messages[0].content, SYSTEM);
+  });
+  try {
+    for await (const c of githubModelsStream({
+      model: "openai/gpt-4o-mini",
+      messages: [{ role: "user", content: "سؤال" }],
+      system: SYSTEM,
+      apiKey: "k",
+      maxTokens: 50,
+    })) {
+      void c;
+      break;
+    }
   } finally {
     restore();
   }
