@@ -4,12 +4,12 @@
 
 ```text
 BASELINE            auth-baseline -> 289c7f5   (AUTH HARDENED / FINAL — محمي، غير قابل للإزاحة)
-CURRENT_CHECKPOINT  main = 9d67b9f (HEAD). سلسلة التوثيق: 2adab69 (Item 5 عبر PR #1)
+CURRENT_CHECKPOINT  main = 0559dc4 (HEAD — PR #7). سلسلة التوثيق: 2adab69 (Item 5 عبر PR #1)
                    → d8d0d9e → 51a6519 (PR #3 FRONTEND-SPEC v1.0) → 8918512 (PR #2 إغلاق
                    CR-005) → 301f768 (PR #4 FRONTEND-SPEC v1.1) → c02fdb2 (PR #5 v1.1.1)
-                   → 9d67b9f (PR #6: CR-006 عقد أ–و معتمد). لا تغيير كود حتى PR #6
-                   (توثيقات فقط). CR-006 (Item 6): التنفيذ جارٍ في فرع
-                   feat/item-6-conversation-intel (PR #7). المرجع البرمجي للمشروع = 8918512
+                   → 9d67b9f (PR #6: CR-006 عقد أ–و معتمد) → 0559dc4 (PR #7:
+                   Item 6 DONE — تنفيذ كامل + اختبارات، CI أخضر بعد الدمج).
+                   المرجع البرمجي للمشروع = 8918512
 
 STATUS_MATRIX
   - 5.1 = PASS            (قراءة ملفات — مثبتة حيًا)
