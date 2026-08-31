@@ -48,38 +48,49 @@ export function parseOrNull<T>(schema: z.ZodType<T>, data: unknown): T | null {
   return r.success ? r.data : null;
 }
 
-// ===== تسوية جسم /api/chat (lenient) — تحافظ على السلوك القديم حرفيًا =====
-// zod هنا «يصحح ولا يرفض»: أي حقل شاذ يتحول لبديل آمن، ولا يُرفض الطلب بسبب بنيته —
-// نفس نتيجة الفحوصات اليدوية القديمة (فلترة الرسائل غير الصالحة + القيم الافتراضية).
-// الملاحظات المعتمدة:
-//   1) الرسائل غير الصالحة تُفلتر (لا تُسقط كل المصفوفة) — نفس سلوك .filter القديم.
-//   2) temperature خارج النطاق يمر كما هو — التثبيت (clamp) يبقى في المسار، لا رفض 400.
-//   3) files تُمرَّر كما هي (unknown) — التحقق منها مسؤولية mergeAttachments (ترمي 400 واضحة).
+// ===== تسوية جسم /api/chat — تصحّح ولا ترفض البنية =====
+// لا 400 بسبب الشكل: الحقول الشاذة تُسقط/تُثبَّت، والطلب يبقى قابلاً للمعالجة.
+// المرحلة 0 (تشديد): الأدوار المسموحة فقط + سقف رسائل/نص + تثبيت temperature.
+//   1) الدور خارج user|assistant|system يُفلتر فرديًا (لا تُسقط المصفوفة).
+//   2) temperature خارج [0, 1.5] يُثبَّت هنا (لا يمرّ 99 للمسار).
+//   3) files تُمرَّر كما هي (unknown) — التحقق منها مسؤولية mergeAttachments.
+
+const ALLOWED_ROLES = new Set(["user", "assistant", "system"]);
+const MAX_PARSE_MESSAGES = 20;
+const MAX_PARSE_CONTENT = 60_000;
+const TEMP_MIN = 0;
+const TEMP_MAX = 1.5;
 
 const chatMessageLoose = z.object({
   role: z.string().min(1),
   content: z.string(),
 });
 
-/** المنتِج القياسي: مصفوفة رسائل تتسامح مع العناصر غير الصالحة (تُفلتر) */
+/** مصفوفة رسائل: فلترة العناصر الشاذة + الأدوار + سقف الطول والعدد (آخر 20) */
 const messagesLoose = z
   .array(z.unknown())
   .optional()
-  .catch([]) // messages ليست مصفوفة → []
+  .catch([])
   .transform((arr) =>
     (arr ?? [])
       .map((m) => chatMessageLoose.safeParse(m))
       .filter((r): r is { success: true; data: { role: string; content: string } } => r.success)
       .map((r) => r.data)
+      .filter((m) => ALLOWED_ROLES.has(m.role))
+      .map((m) => ({
+        role: m.role,
+        content: m.content.length > MAX_PARSE_CONTENT ? m.content.slice(0, MAX_PARSE_CONTENT) : m.content,
+      }))
+      .slice(-MAX_PARSE_MESSAGES)
   );
 
 const chatBodyLoose = z.object({
   messages: messagesLoose,
-  temperature: z.number().finite().optional().catch(undefined), // غير رقمي/لانهاي → undefined
-  modelId: z.string().optional().catch(undefined),
-  apiKey: z.string().optional().catch(undefined),
-  system: z.string().optional().catch(undefined),
-  files: z.unknown().optional().catch(undefined), // تُترك لـ mergeAttachments
+  temperature: z.number().finite().optional().catch(undefined),
+  modelId: z.string().max(120).optional().catch(undefined),
+  apiKey: z.string().max(300).optional().catch(undefined),
+  system: z.string().max(30_000).optional().catch(undefined),
+  files: z.unknown().optional().catch(undefined),
 });
 
 /** الناتج الطبيعي (normalized) لجسم طلب المحادثة */
@@ -92,14 +103,19 @@ export interface NormalizedChatBody {
   files: unknown;
 }
 
-/** تسوية جسم /api/chat عبر zod — لا ترفض أبدًا؛ تحافظ على السلوك القديم بالضبط */
+function clampTemperature(n: number | undefined): number | undefined {
+  if (typeof n !== "number" || !Number.isFinite(n)) return undefined;
+  return Math.min(TEMP_MAX, Math.max(TEMP_MIN, n));
+}
+
+/** تسوية جسم /api/chat عبر zod — لا ترفض البنية؛ تثبّت القيم الشاذة */
 export function parseChatBody(raw: unknown): NormalizedChatBody {
   const r = chatBodyLoose.safeParse(raw);
   if (!r.success) return { messages: [], files: undefined };
   const d = r.data;
   return {
     messages: d.messages,
-    temperature: d.temperature,
+    temperature: clampTemperature(d.temperature),
     modelId: d.modelId,
     apiKey: d.apiKey,
     system: d.system,

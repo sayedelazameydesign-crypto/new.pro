@@ -6,6 +6,7 @@ import { NextRequest } from "next/server";
 import { generateImage, imageKey } from "@/lib/image";
 import { sanitizeError } from "@/lib/ai";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { isImageGenerationEnabled } from "@/lib/flags";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // النموذج قد يُحمَّل أول مرة
@@ -14,6 +15,17 @@ const MAX_BODY = 20_000;
 const MAX_PROMPT = 800;
 
 export async function POST(req: NextRequest) {
+  // 0) الميزة معلّقة افتراضيًا (HF بلا مزود صور حي) — لا تستهلك حصة ولا مفاتيح
+  if (!isImageGenerationEnabled()) {
+    return Response.json(
+      {
+        error: "توليد الصور غير مفعّل حاليًا — سيُعاد عند توفر مسار مجاني معتمد.",
+        code: "IMAGE_DISABLED",
+      },
+      { status: 503 }
+    );
+  }
+
   // 1) حماية الحدود (دلو مخصص للصور: 10/دقيقة افتراضيًا)
   const ip = getClientIp(req);
   const lim = Number(process.env.RATE_LIMIT_IMAGE_PER_MIN) || 10;

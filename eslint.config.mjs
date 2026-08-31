@@ -1,24 +1,22 @@
-// ===== إعداد ESLint (flat config) — المرحلة D1 =====
-// Next 15 + TypeScript. يُشغَّل يدويًا وفي CI (npm run lint).
+// ===== إعداد ESLint (flat config) — Next 16 + TypeScript =====
+// يُشغَّل يدويًا وفي CI (npm run lint). بلا FlatCompat (غير متوافق مع eslint-config-next 16).
 
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { FlatCompat } from "@eslint/eslintrc";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({ baseDirectory: __dirname });
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
 
 const config = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...nextVitals,
+  ...nextTs,
   {
     ignores: ["node_modules/**", ".next/**", "public/sw.js", "playwright-report/**", "test-results/**"],
   },
   {
-    // next-env.d.ts مولّد تلقائيًا من Next ويستخدم triple-slash قياسيًا
     files: ["next-env.d.ts"],
     rules: { "@typescript-eslint/triple-slash-reference": "off" },
+  },
+  {
+    // مؤجّل حتى تفكيك page.tsx: القاعدة جديدة في eslint-config-next 16 وليست انحدارًا سلوكيًا
+    rules: { "react-hooks/set-state-in-effect": "off" },
   },
 ];
 

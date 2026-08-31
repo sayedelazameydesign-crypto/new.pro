@@ -7,9 +7,9 @@
 🔗 **الموقع الحي (كامل):** [https://new-pro-kohl.vercel.app](https://new-pro-kohl.vercel.app) · 🔗 **نسخة الإعدادات الكاملة:** [nawah-ai-alpha.vercel.app](https://nawah-ai-alpha.vercel.app)
 📦 **الكود:** [GitHub](https://github.com/sayedelazameydesign-crypto/new.pro)
 
-`Next.js 15 (App Router)` · `Gemini API` · `Hugging Face` · `Vercel` · `TypeScript` · `Tailwind v4`
+`Next.js 16 (App Router)` · `Gemini` · `Groq` · `Hugging Face` · `Vercel` · `TypeScript` · `Tailwind v4`
 
-[![CI — فحص النواة](https://github.com/sayedelazameydesign-crypto/new.pro/actions/workflows/ci.yml/badge.svg)](https://github.com/sayedelazameydesign-crypto/new.pro/actions) · 88/88 اختبارات ✅ (تشمل PWA: manifest + أيقونات + service worker)
+[![CI — فحص النواة](https://github.com/sayedelazameydesign-crypto/new.pro/actions/workflows/ci.yml/badge.svg)](https://github.com/sayedelazameydesign-crypto/new.pro/actions) · اختبارات وحدة + Playwright E2E على كل دفع
 
 [واجهة عربية/إنجليزية RTL/LTR] · [بث مباشر (Streaming)] · [مفاتيح مجانية فقط] · [قابلة للتوسع دون هدم المعمارية]
 
@@ -21,7 +21,7 @@
 
 | الميزة | التفاصيل |
 |---|---|
-| 🤖 **مزودان مجانيان** | Gemini (AI Studio) + Hugging Face Inference — بتراجع تلقائي (fallback) |
+| 🤖 **مزودات مجانية** | Groq + Gemini + Hugging Face + بحث Tavily — بتراجع تلقائي (fallback) |
 | ⚡ **بث فوري** | الرد يظهر حرفًا بحرف عبر SSE (بدون انتظار الرد الكامل) |
 | 🎨 **واجهة عصرية** | وضع ليلي/نهاري، جداول ورموز ملونة (highlight.js)، نسخ الكود، RTL/LTR |
 | 💬 **إدارة محادثات كاملة** | إنشاء/إعادة تسمية/حذف/بحث/تصدير/استيراد (JSON) |
@@ -208,12 +208,13 @@ ANTHROPIC_API_KEY=
 - الواجهة و API لا تتغيران إطلاقًا
 
 ### 📜 خارطة الطريق المقترحة (Roadmap)
-- [x] نواة كاملة: واجهة + خلفية + مزودان مجانيان + نشر بلا تكلفة
-- [ ] مزامنة سحابية عبر Neon (3 ملفات)
-- [ ] محادثات مجهولة بدون تسجيل (عبء صفري) → ثم تسجيل اختياري عبر Auth.js
-- [ ] إضافة مزودين: OpenRouter المجاني، Groq، DeepSeek
-- [ ] أدوات: بحث ويب (SearXNG)، قراءة PDF، توليد صور بالمجان (FLUX.1-schnell)
-- [ ] مشاركة المحادثات برابط عام + تصدير Markdown/PDF
+- [x] نواة كاملة: واجهة + خلفية + مزودات مجانية + نشر بلا تكلفة
+- [x] مزامنة سحابية عبر Neon
+- [x] زائر بلا تسجيل + حسابات Auth.js (بريد + Google)
+- [x] مزود Groq + بحث ويب (Tavily)
+- [x] قراءة ملفات + صوت + ملخص + PWA + تصدير Markdown/PDF + مشاركة محلية `?c=id`
+- [ ] توليد صور بمسار مجاني معتمد (الزر مخفي حتى يتوفر — Pollinations مرشّح)
+- [ ] OpenRouter `:free` / GitHub Models / قاطع دائرة للحصة 429
 
 ---
 

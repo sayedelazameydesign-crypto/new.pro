@@ -57,6 +57,7 @@ import { copyText, uid } from "@/lib/utils";
 import { summarize, shouldSummarize, composeSystem } from "@/lib/summary";
 import type { ChatMessage, Conversation, ProviderStatus, Settings } from "@/lib/types";
 import { queryKeys } from "@/lib/query-client";
+import { IMAGE_UI_ENABLED } from "@/lib/flags";
 import Toasts from "@/app/components/Toasts";
 
 const store = new LocalStore();
@@ -1051,6 +1052,7 @@ export default function Home() {
               >
                 <Paperclip size={16} />
               </button>
+              {IMAGE_UI_ENABLED && (
               <button
                 type="button"
                 onClick={generateImageFlow}
@@ -1060,6 +1062,7 @@ export default function Home() {
               >
                 <ImagePlus size={17} />
               </button>
+              )}
               <button
                 type="button"
                 onClick={toggleDictation}

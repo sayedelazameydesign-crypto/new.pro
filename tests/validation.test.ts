@@ -63,24 +63,25 @@ test("V-6 حدود الحجم: رسالة تتجاوز 60 ألف حرف تُرف
 
 // ===== V-7..V-10: التسوية المتساهلة parseChatBody (مسار الإنتاج) =====
 
-test("V-7 تسامح: 30 رسالة تمر كلها (لا رفض — القص في المسار)", () => {
+test("V-7 تشديد: 30 رسالة تُقص إلى آخر 20 (لا رفض)", () => {
   const msgs = Array.from({ length: 30 }, (_, i) => ({
     role: i % 2 === 1 ? "user" : "assistant",
     content: "رسالة " + i,
   }));
   const b = parseChatBody({ messages: msgs });
-  assert.equal(b.messages.length, 30);
-  assert.equal(b.messages[29].role, "user");
+  assert.equal(b.messages.length, 20);
+  assert.equal(b.messages[0].content, "رسالة 10");
+  assert.equal(b.messages[19].role, "user");
 });
 
-test("V-8 تسامح: temperature=99 يمر كما هو (التثبيت في المسار، لا رفض 400)", () => {
-  const b = parseChatBody({ messages: [{ role: "user", content: "x" }], temperature: 99 });
-  assert.equal(b.temperature, 99);
+test("V-8 تشديد: temperature خارج النطاق يُثبَّت (99→1.5، -1→0) بلا رفض", () => {
+  const hi = parseChatBody({ messages: [{ role: "user", content: "x" }], temperature: 99 });
+  assert.equal(hi.temperature, 1.5);
+  const lo = parseChatBody({ messages: [{ role: "user", content: "x" }], temperature: -1 });
+  assert.equal(lo.temperature, 0);
 });
 
-test("V-9 تسامح: رسائل غير صالحة تُفلتر فرديًا (لا تُسقط الكل)", () => {
-  // مطابقة الفلتر القديم حرفيًا: أي role صادق + content نص يمر (حتى role غير معروف)،
-  // ويُفلتر فقط: بلا دور، null، نص حر، content غير نصي
+test("V-9 تشديد: أدوار غير مسموحة تُفلتر فرديًا (لا تُسقط الكل)", () => {
   const b = parseChatBody({
     messages: [
       { role: "user", content: "صالحة" },
@@ -89,11 +90,12 @@ test("V-9 تسامح: رسائل غير صالحة تُفلتر فرديًا (ل
       null,
       "نص",
       { role: "assistant", content: 5 },
+      { role: "system", content: "تعليمات" },
     ],
   });
   assert.deepEqual(b.messages, [
     { role: "user", content: "صالحة" },
-    { role: "hacker", content: "x" },
+    { role: "system", content: "تعليمات" },
   ]);
 });
 
@@ -111,4 +113,17 @@ test("V-10 تسامح: جسم غير كائن/فارغ → messages:[] بلا ر
   const withFiles = parseChatBody({ messages: [], files: [{ name: "a.txt", data: "x" }] });
   const arr = Array.isArray(withFiles.files) ? (withFiles.files as { name?: string }[]) : [];
   assert.equal(arr[0]?.name, "a.txt");
+});
+
+test("V-11 تشديد: محتوى أطول من 60 ألف يُقص ولا يُرفض", () => {
+  const b = parseChatBody({
+    messages: [{ role: "user", content: "x".repeat(60_001) }],
+  });
+  assert.equal(b.messages.length, 1);
+  assert.equal(b.messages[0].content.length, 60_000);
+});
+
+test("V-12 تشديد: temperature غير رقمي → undefined", () => {
+  const b = parseChatBody({ messages: [{ role: "user", content: "x" }], temperature: "hot" });
+  assert.equal(b.temperature, undefined);
 });
